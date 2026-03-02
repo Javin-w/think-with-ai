@@ -1,9 +1,19 @@
+import Layout from './components/Layout'
+
 function App() {
   return (
-    <div style={{ padding: '2rem' }}>
-      <h1>Think With AI</h1>
-      <p>Loading...</p>
-    </div>
+    <Layout
+      leftPanel={
+        <div className="flex items-center justify-center h-full text-text-secondary">
+          Mind Map
+        </div>
+      }
+      rightPanel={
+        <div className="flex items-center justify-center h-full text-text-secondary">
+          Conversation
+        </div>
+      }
+    />
   )
 }
 
