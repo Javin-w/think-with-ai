@@ -26,8 +26,11 @@ export default function ConversationPanel({ nodeId, onSend, onBranch, isStreamin
 
   if (!nodeId) {
     return (
-      <div className="flex items-center justify-center h-full text-text-secondary text-sm">
-        选择或创建一个话题开始探索
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center text-text-secondary text-sm">
+          开始提问吧...
+        </div>
+        <MessageInput onSend={onSend} disabled={isStreaming} />
       </div>
     )
   }
