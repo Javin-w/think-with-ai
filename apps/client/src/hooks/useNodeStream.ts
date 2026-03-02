@@ -76,6 +76,11 @@ export function useNodeStream() {
         lineBuffer = lines.pop() ?? ''
 
         for (const line of lines) {
+          // Handle error events from Vercel AI SDK data stream protocol (prefix '3:')
+          if (line.startsWith('3:')) {
+            const errorMsg = JSON.parse(line.slice(2))
+            throw new Error(typeof errorMsg === 'string' ? errorMsg : 'AI provider error')
+          }
           if (!line.startsWith('0:')) continue  // Only text delta events
           try {
             const jsonStr = line.slice(2)  // Remove "0:" prefix
