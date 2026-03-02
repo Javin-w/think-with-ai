@@ -276,3 +276,57 @@ think_with_ai/
 ### Next Steps
 - Task 7: Wire ConversationPanel to Zustand store + streaming API
 - Task 8: Text selection → branching from assistant messages
+
+
+## [Task 7] Connect Conversation Panel to Streaming API
+
+### Completion Status
+✅ COMPLETE
+
+### Key Achievements
+- Created `apps/client/src/hooks/useNodeStream.ts` — SSE streaming hook using fetch + ReadableStream
+- Updated `apps/client/src/components/Chat/ConversationPanel.tsx` — replaced mock data with Zustand store
+- Updated `apps/client/src/App.tsx` — wired store initialization, tree creation, and streaming
+- TypeScript typecheck: PASS (0 errors)
+- Evidence saved to `.sisyphus/evidence/task-7-typecheck.txt`
+
+### Implementation Details
+
+#### useNodeStream Hook
+- Uses `fetch` + `ReadableStream` (NOT EventSource — EventSource is GET-only)
+- Parses Vercel AI SDK data stream protocol: lines starting with `0:` are text deltas
+- Accumulates text chunks and calls `updateLastMessage()` for live streaming display
+- Adds user message → builds context → adds empty assistant placeholder → streams response
+- Uses `useTreeStore.getState()` for synchronous state reads after async operations
+- Auto-updates tree title on first message exchange in root node
+- Error handling: catches AbortError separately, shows error in assistant message placeholder
+- `err: unknown` typing (not `any`) for strict TypeScript compliance
+
+#### ConversationPanel Changes
+- Props changed: `node: TreeNode | null` → `nodeId: string | null`
+- Reads node from Zustand store via `nodes.find(n => n.id === nodeId)`
+- Removed MOCK_MESSAGES constant — shows real messages from store
+- Empty state: "选择或创建一个话题开始探索" when no nodeId
+- Empty messages state: "开始提问吧..." when node has no messages
+
+#### App.tsx Changes
+- Calls `loadTrees()` on mount via useEffect
+- `handleSend`: if no currentNodeId, creates tree first then sends message
+- Uses returned `rootNode.id` directly (not stale `currentNodeId` from closure)
+
+### Architecture Pattern
+- **Hook owns streaming logic** — component is pure display
+- **Store is source of truth** — ConversationPanel reads from store, not props
+- **Parent wires actions** — App passes `handleSend` which orchestrates create + stream
+- **No new dependencies** — only uses fetch, ReadableStream, TextDecoder (browser built-ins)
+
+### Vercel AI SDK Stream Parsing
+- Text deltas: `0:"Hello"` → parse JSON after removing `0:` prefix
+- Metadata lines (2:, 8:, etc.) are skipped
+- Chunks may contain multiple lines — split by `\n` and process each
+- Use `{ stream: true }` option on TextDecoder for partial UTF-8 handling
+
+### Next Steps
+- Task 8: Text selection → branching from assistant messages
+- Task 9: Mind map visualization in left panel
+- Task 10: Tree list UI for managing multiple conversations
