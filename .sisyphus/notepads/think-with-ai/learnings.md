@@ -230,3 +230,49 @@ think_with_ai/
 ### Next Steps
 - Build React chat UI components that consume this streaming endpoint
 - Integrate with Zustand store for message state management
+
+
+## [Task 6] Conversation Panel UI with Markdown Rendering
+
+### Completion Status
+✅ COMPLETE
+
+### Key Achievements
+- Created `apps/client/src/components/Chat/MessageBubble.tsx` — renders user/assistant messages
+- Created `apps/client/src/components/Chat/MessageInput.tsx` — textarea with auto-resize + send
+- Created `apps/client/src/components/Chat/ConversationPanel.tsx` — full chat container with mock data
+- Updated `apps/client/src/App.tsx` — wires ConversationPanel into right panel
+- Added `highlight.js/styles/github.css` import in `main.tsx` for code block syntax highlighting
+- TypeScript typecheck: PASS (0 errors)
+- Playwright screenshot: `.sisyphus/evidence/task-6-messages.png`
+
+### Component Architecture
+- **MessageBubble**: User messages → right-aligned slate bg; Assistant messages → left-aligned white with markdown
+- **MessageInput**: Auto-resizing textarea, Enter to send, Shift+Enter for newline, disabled state support
+- **ConversationPanel**: Scrollable message list + input, streaming indicator (bounce dots), optional header for selectedText
+- Mock messages show markdown features: bold, headings, ordered lists, fenced code blocks (Python)
+
+### Markdown Rendering Stack
+- `react-markdown` v9 for base rendering
+- `remark-gfm` for GFM extensions (tables, strikethrough, task lists)
+- `rehype-highlight` for syntax-highlighted code blocks
+- `highlight.js/styles/github.css` for code block theme
+- Custom `code` component distinguishes inline vs block code via `className?.includes('language-')`
+- Custom `pre` component adds rounded corners and overflow handling
+
+### Critical Implementation Details
+- `data-testid="assistant-message"` on assistant bubbles — used by Task 8 for text selection branching
+- Mock MOCK_MESSAGES constant with Chinese content for visual testing
+- Streaming indicator with 3 bouncing dots (staggered animationDelay: 0, 150, 300ms)
+- `highlight.js` needed explicit install as peer dep of rehype-highlight (not auto-installed in pnpm strict mode)
+
+### Design Tokens Used
+- `text-text-primary`, `text-text-secondary` for typography
+- `bg-surface`, `bg-surface-secondary` for backgrounds
+- `border-border` for dividers and borders
+- `bg-brand` for send button, `focus:ring-brand` for input focus
+- `prose prose-sm` for markdown content typography baseline
+
+### Next Steps
+- Task 7: Wire ConversationPanel to Zustand store + streaming API
+- Task 8: Text selection → branching from assistant messages

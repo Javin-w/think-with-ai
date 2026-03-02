@@ -1,6 +1,11 @@
 import Layout from './components/Layout'
+import ConversationPanel from './components/Chat/ConversationPanel'
 
 function App() {
+  const handleSend = (message: string) => {
+    console.log('Send:', message)
+  }
+
   return (
     <Layout
       leftPanel={
@@ -9,9 +14,7 @@ function App() {
         </div>
       }
       rightPanel={
-        <div className="flex items-center justify-center h-full text-text-secondary">
-          Conversation
-        </div>
+        <ConversationPanel node={null} onSend={handleSend} />
       }
     />
   )
