@@ -54,11 +54,11 @@ chat.post('/', async (c) => {
       status: response.status,
       headers,
     })
-  } catch (error: any) {
-    if (error?.message?.includes('API key') || error?.status === 401) {
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.message.includes('API key') || (error as any).status === 401)) {
       return c.json({ error: 'Invalid API key' }, 401)
     }
-    return c.json({ error: error?.message ?? 'AI provider error' }, 500)
+    return c.json({ error: error instanceof Error ? error.message : 'AI provider error' }, 500)
   }
 })
 

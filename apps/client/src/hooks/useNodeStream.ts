@@ -62,13 +62,18 @@ export function useNodeStream() {
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let accumulated = ''
+      let lineBuffer = ''
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
         const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
+        // Buffer partial lines across chunk boundaries
+        lineBuffer += chunk
+        const lines = lineBuffer.split('\n')
+        // Keep the last (potentially incomplete) line in the buffer
+        lineBuffer = lines.pop() ?? ''
 
         for (const line of lines) {
           if (!line.startsWith('0:')) continue  // Only text delta events
@@ -82,6 +87,18 @@ export function useNodeStream() {
           } catch {
             // Skip malformed lines
           }
+        }
+      }
+      // Process any remaining buffered content
+      if (lineBuffer.startsWith('0:')) {
+        try {
+          const text = JSON.parse(lineBuffer.slice(2))
+          if (typeof text === 'string') {
+            accumulated += text
+            await updateLastMessage(nodeId, accumulated)
+          }
+        } catch {
+          // Skip malformed final line
         }
       }
 
