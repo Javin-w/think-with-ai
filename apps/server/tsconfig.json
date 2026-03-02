@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "baseUrl": ".",
+    "paths": {
+      "@repo/types": ["../../packages/types/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}

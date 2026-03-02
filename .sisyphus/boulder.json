@@ -5,5 +5,6 @@
     "ses_35334e00dffekiII0KuMGMFKDi"
   ],
   "plan_name": "think-with-ai",
-  "agent": "atlas"
+  "agent": "atlas",
+  "worktree_path": "/Users/bytedance/Desktop/think_with_ai"
 }

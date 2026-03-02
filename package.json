@@ -1,0 +1,13 @@
+{
+  "name": "think-with-ai",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently --names 'client,server' --prefix-colors 'cyan,yellow' 'pnpm --filter client dev' 'pnpm --filter server dev'",
+    "build": "pnpm --filter types build && pnpm --filter client build",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "typescript": "^5.7.0"
+  }
+}
