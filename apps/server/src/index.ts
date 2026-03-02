@@ -1,10 +1,13 @@
 import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import chat from './routes/chat'
 
 const app = new Hono()
 
 app.use('/api/*', cors())
+
+app.route('/api/chat', chat)
 
 app.get('/api/health', (c) => {
   return c.json({ status: 'ok' })
