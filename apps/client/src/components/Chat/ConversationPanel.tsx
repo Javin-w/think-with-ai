@@ -2,14 +2,16 @@ import { useRef, useEffect } from 'react'
 import { useTreeStore } from '../../store/treeStore'
 import MessageBubble from './MessageBubble'
 import MessageInput from './MessageInput'
+import TextSelectionPopup from '../TextSelectionPopup/TextSelectionPopup'
 
 interface ConversationPanelProps {
   nodeId: string | null
   onSend: (message: string) => void
+  onBranch: (selectedText: string) => void
   isStreaming?: boolean
 }
 
-export default function ConversationPanel({ nodeId, onSend, isStreaming = false }: ConversationPanelProps) {
+export default function ConversationPanel({ nodeId, onSend, onBranch, isStreaming = false }: ConversationPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const { nodes } = useTreeStore()
 
@@ -66,6 +68,10 @@ export default function ConversationPanel({ nodeId, onSend, isStreaming = false 
       </div>
 
       {/* Input */}
+
+      {/* Text selection branching popup */}
+      <TextSelectionPopup onBranch={onBranch} disabled={isStreaming} />
+
       <MessageInput onSend={onSend} disabled={isStreaming} />
     </div>
   )

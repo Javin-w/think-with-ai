@@ -5,7 +5,7 @@ import { useTreeStore } from './store/treeStore'
 import { useNodeStream } from './hooks/useNodeStream'
 
 function App() {
-  const { currentNodeId, loadTrees, createTree } = useTreeStore()
+  const { currentNodeId, loadTrees, createTree, createNode } = useTreeStore()
   const { sendMessage, isStreaming } = useNodeStream()
 
   // Load trees on mount
@@ -24,6 +24,17 @@ function App() {
     }
   }
 
+  const handleBranch = async (selectedText: string) => {
+    if (!currentNodeId || isStreaming) return
+
+    // Create child node
+    const childNode = await createNode(currentNodeId, selectedText)
+
+    // Auto-send first message
+    const firstMessage = `请详细解释：${selectedText}`
+    await sendMessage(childNode.id, firstMessage)
+  }
+
   return (
     <Layout
       leftPanel={
@@ -35,6 +46,7 @@ function App() {
         <ConversationPanel
           nodeId={currentNodeId}
           onSend={handleSend}
+          onBranch={handleBranch}
           isStreaming={isStreaming}
         />
       }
