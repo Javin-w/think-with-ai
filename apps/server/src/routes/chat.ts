@@ -11,13 +11,20 @@ chat.post('/', async (c) => {
   const { message, context = [], provider, model } = body
 
   const aiProvider = provider ?? process.env.AI_PROVIDER ?? 'openai'
-  const aiModel = model ?? process.env.AI_MODEL ?? 'gpt-4o-mini'
+  const aiModel = model ?? process.env.AI_MODEL ?? 'moonshot-v1-128k'
 
   // Build the AI model instance
   let aiModelInstance
   if (aiProvider === 'anthropic') {
     const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     aiModelInstance = anthropic(aiModel)
+  } else if (aiProvider === 'moonshot') {
+    // Kimi (Moonshot AI) — OpenAI-compatible API
+    const moonshot = createOpenAI({
+      apiKey: process.env.MOONSHOT_API_KEY,
+      baseURL: 'https://api.moonshot.cn/v1',
+    })
+    aiModelInstance = moonshot(aiModel)
   } else {
     const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
     aiModelInstance = openai(aiModel)
