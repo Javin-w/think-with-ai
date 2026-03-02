@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import Layout from './components/Layout'
 import ConversationPanel from './components/Chat/ConversationPanel'
+import MindMap from './components/MindMap/MindMap'
 import { useTreeStore } from './store/treeStore'
 import { useNodeStream } from './hooks/useNodeStream'
 
 function App() {
-  const { currentNodeId, loadTrees, createTree, createNode } = useTreeStore()
+  const { currentNodeId, currentTreeId, loadTrees, createTree, createNode } = useTreeStore()
   const { sendMessage, isStreaming } = useNodeStream()
 
   // Load trees on mount
@@ -38,9 +39,7 @@ function App() {
   return (
     <Layout
       leftPanel={
-        <div className="flex items-center justify-center h-full text-text-secondary text-sm">
-          Mind Map (Task 9)
-        </div>
+        <MindMap treeId={currentTreeId} />
       }
       rightPanel={
         <ConversationPanel
