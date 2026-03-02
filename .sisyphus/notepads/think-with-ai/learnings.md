@@ -330,3 +330,276 @@ think_with_ai/
 - Task 8: Text selection → branching from assistant messages
 - Task 9: Mind map visualization in left panel
 - Task 10: Tree list UI for managing multiple conversations
+
+
+## [Task 8] Text Selection Branching Interaction
+
+### Completion Status
+✅ COMPLETE
+
+### Key Achievements
+- Created `apps/client/src/components/TextSelectionPopup/TextSelectionPopup.tsx` — floating popup on text selection
+- Updated `apps/client/src/components/Chat/ConversationPanel.tsx` — added `onBranch` prop and TextSelectionPopup
+- Updated `apps/client/src/App.tsx` — wired `handleBranch` with `createNode` + auto `sendMessage`
+- TypeScript typecheck: PASS (0 errors)
+- Evidence saved to `.sisyphus/evidence/task-8-typecheck.txt`
+
+### Implementation Details
+
+#### TextSelectionPopup Component
+- Uses `@floating-ui/react` with `useFloating`, `inline()`, `offset(8)`, `autoPlacement()` middleware
+- Listens for `mouseup` on document, checks if selection is inside `[data-testid="assistant-message"]`
+- `range.cloneRange()` saves a copy of the selection range (original mutates when user clicks)
+- `onMouseDown={e.preventDefault()}` on button prevents selection collapse before click fires
+- `e.preventDefault()` + `e.stopPropagation()` on click handler also prevents collapse
+- Falls back to `savedRangeRef.current?.toString()` if live selection is already cleared
+- Dismisses on Escape key or when selection changes to non-assistant content
+- `data-testid="explore-popup"` for Playwright QA (Task 11)
+
+#### Branching Flow
+1. User selects text in assistant message -> popup appears with deep explore button
+2. Click button -> `onBranch(selectedText)` called
+3. App creates child node via `createNode(currentNodeId, selectedText)`
+4. Store auto-updates `currentNodeId` to new child node
+5. App sends first message via `sendMessage(childNode.id, ...)`
+6. ConversationPanel re-renders showing new node conversation
+
+### @floating-ui/react Usage Pattern
+- Virtual reference element via `refs.setReference({ getBoundingClientRect, getClientRects })`
+- `inline()` middleware handles multi-line text selection positioning
+- `autoPlacement({ allowedPlacements: ['top', 'bottom'] })` flips when near edges
+- `offset(8)` adds 8px gap between selection and popup
+
+### Critical UX Patterns
+- `onMouseDown={e.preventDefault()}` is THE key to preventing selection loss on button click
+- `setTimeout(10)` in mouseup handler lets browser finalize selection before reading it
+- `savedRangeRef` as backup — selection may be cleared between mouseup and click events
+- Popup disabled during streaming (`disabled` prop) to prevent branching mid-response
+
+
+## [Task 9] ReactFlow Mind Map with Dagre Layout
+
+### Completion Status
+✅ COMPLETE
+
+### Key Achievements
+- Created `MindMapNode.tsx` — custom ReactFlow node wrapped in `React.memo`
+- Created `MindMap.tsx` — ReactFlow mind map with Dagre LR auto-layout
+- Updated `App.tsx` — passes `<MindMap treeId={currentTreeId} />` as left panel
+- TypeScript typecheck: PASS (0 errors)
+- Evidence saved to `.sisyphus/evidence/task-9-typecheck.txt`
+
+### Implementation Details
+
+#### MindMapNode Component
+- Custom node with `Handle` components for source (right) and target (left)
+- Active state: brand border + ring-2 ring-offset-1 for clear visual distinction
+- Inactive state: border-border with hover → border-brand transition
+- `max-w-[160px]` + `truncate` prevents long labels from blowing out layout
+- `React.memo` wrapper is CRITICAL — prevents re-render on every pan/zoom event
+
+#### Dagre Layout
+- `rankdir: 'LR'` for left-to-right mind map flow
+- `nodesep: 30`, `ranksep: 80` for comfortable spacing
+- Node dimensions: 180×50px — `g.setNode(id, { width, height })`
+- Dagre returns center coordinates — must offset by `-width/2`, `-height/2` for ReactFlow
+
+#### Node Label Logic
+- Branch nodes: use `selectedText` (the text that triggered the branch)
+- Root nodes: first user message content, sliced to 50 chars
+- Fallback: '新对话' for empty nodes
+- Labels > 50 chars get truncated with '…'
+
+#### ReactFlow Configuration
+- `nodeTypes` defined OUTSIDE component (constant) — prevents re-registration on render
+- `fitView` + `fitViewOptions={{ padding: 0.3 }}` for initial auto-zoom
+- `nodesDraggable={false}`, `nodesConnectable={false}`, `elementsSelectable={false}`
+- Pan and zoom enabled for navigation
+- `onNodeClick` calls `setCurrentNode(node.id)` to switch conversation
+
+#### State Sync Strategy
+- `flowNodes`/`flowEdges` derived via `useMemo` from Zustand store
+- Passed directly to `<ReactFlow nodes={flowNodes} edges={flowEdges}>` — always reflects store
+- `useNodesState`/`useEdgesState` only used for `onNodesChange`/`onEdgesChange` handlers
+- Internal state from these hooks is NOT used — derived state is source of truth
+
+### Dependencies
+- `@xyflow/react` ^12.0.0 — already installed in Task 1
+- `@dagrejs/dagre` ^1.1.4 — already installed in Task 1
+- `@xyflow/react/dist/style.css` imported in MindMap.tsx for proper rendering
+- `@dagrejs/dagre` ships its own `index.d.ts` — no separate @types package needed
+
+
+## [Task 10] Tree List, Empty States, and View Switching
+
+### Completion Status
+✅ COMPLETE
+
+### Key Achievements
+- Created `apps/client/src/components/TreeList/TreeList.tsx` — topic list with empty state and create button
+- Updated `apps/client/src/App.tsx` — full view switching logic (list ↔ tree)
+- TypeScript typecheck: PASS (0 errors)
+- Evidence saved to `.sisyphus/evidence/task-10-typecheck.txt`
+
+### View Switching Architecture
+- State-driven routing via `view: 'list' | 'tree'` in Zustand store (no router library)
+- `view === 'list'` → renders TreeList component with all trees
+- `view === 'tree'` → renders Layout with MindMap + ConversationPanel
+- Back button overlay at top-left of tree view (absolute positioned, z-10)
+- `handleBackToList()` reloads trees to pick up updated titles
+
+### Tree Creation Flow
+- "新建知识树" button calls `handleCreateTree()`
+- Resets `currentTreeId`, `currentNodeId`, `nodes` via `useTreeStore.setState()`
+- Sets view to 'tree' — shows empty MindMap + ConversationPanel
+- First message in ConversationPanel triggers `createTree()` + `sendMessage()`
+- Tree appears in list when user navigates back
+
+### Tree Selection Flow
+- Click existing tree → `loadTree(treeId)` loads nodes from Dexie
+- Finds root node (parentId === null) and sets as currentNode
+- Sets view to 'tree' to show the loaded tree
+
+### Component Design
+- TreeList: max-w-2xl centered layout, clean card-based tree items
+- Empty state: emoji + CTA button with `data-testid="create-tree-cta"` for Playwright QA
+- Tree items show title (truncated) + formatted date (zh-CN locale)
+- `inputAutoFocusRef` prepared for future auto-focus on new tree creation
+
+### Key Pattern: Direct Zustand setState
+- `useTreeStore.setState({ ... })` used to reset state without defining a dedicated action
+- Zustand allows this — useful for one-off state resets without polluting the store interface
+
+---
+
+## Task 11: End-to-End Integration QA (Playwright)
+
+### QA Results Summary
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| A. Empty State | ✅ PASS | "🌱 开始你的第一次探索" visible, CTA button with `data-testid="create-tree-cta"` exists |
+| B. Navigation to Tree View | ✅ PASS | Clicked CTA → tree view with back button, both panels, empty state text |
+| C. Split Panel Layout | ✅ PASS | Left: 35.0% (447.6px), Right: 64.9% (831.4px) at 1280px viewport |
+| D. Input Box Interaction | ✅ PASS* | Typed test text into textarea, verified text appears (*workaround needed, see bug) |
+| E. Back Button Navigation | ✅ PASS | "← 返回列表" returns to list view with tree visible |
+| F. Console Errors | ✅ PASS | 0 JS errors across all navigation flows |
+| G. Minimum Width (1024x768) | ✅ PASS | Left: 35.0% (358px), Right: 64.9% (665px) — both panels functional |
+
+### Critical Bug Found
+- **ConversationPanel dead-end after "开始探索" CTA**: `handleCreateTree()` sets `currentNodeId: null`, but `ConversationPanel` returns early without `MessageInput` when `nodeId` is null (line 27-33 of ConversationPanel.tsx). User cannot type first message → dead-end UX.
+- **Workaround**: Created tree/node programmatically via `window.__db` (Dexie) to test input interaction.
+
+### Architecture Observations
+- View switching: `view: 'list' | 'tree'` in Zustand store (no router)
+- Two empty states in ConversationPanel: (1) nodeId null → text only, (2) nodeId set + no messages → text + input
+- Zustand store NOT on `window`, but Dexie db IS (`window.__db`)
+- Panel data-testids: `left-panel`, `right-panel` (not `tree-panel`/`conversation-panel`)
+- Panel split ratio consistent: ~35%/65% at both 1280px and 1024px viewports
+
+### Evidence Screenshots
+- `.sisyphus/evidence/task-11-empty-state.png`
+- `.sisyphus/evidence/task-11-tree-view.png`
+- `.sisyphus/evidence/task-11-input-typed.png`
+- `.sisyphus/evidence/task-11-back-to-list.png`
+- `.sisyphus/evidence/task-11-min-width.png`
+
+## [Task F2] Code Quality Review
+### Completion Status
+✅ COMPLETE
+
+### Critical Issues (must fix)
+
+1. **useNodeStream.ts:66-86 — No line buffering between stream chunks.**
+   Text deltas split across chunk boundaries are silently dropped. If the server sends `0:"hello"\n0:"wor` in one chunk and `ld"\n` in the next, the partial line `0:"wor` fails JSON.parse (caught by empty `catch {}` on line 82), and the next chunk's `ld"` doesn't start with `0:` so it's skipped. Result: lost tokens in AI responses. Fix: maintain a line buffer across `reader.read()` iterations.
+
+2. **MessageBubble.tsx:25 — Conflicting `max-w-[90%]` and `max-w-none` on same element.**
+   The assistant message div has both `max-w-[90%]` (intended bubble width cap) and `max-w-none` (intended to override `prose` max-width). Since both generate `max-width` CSS properties, `max-w-none` likely overrides the 90% constraint, allowing assistant messages to span full width. Fix: move `max-w-none` to an inner wrapper or use `prose` on a nested element.
+
+3. **chat.ts:57 — `catch (error: any)` uses `any` instead of `unknown`.**
+   The server catch block types error as `any`, allowing unsafe property access on line 58 (`error?.message?.includes`). Should be `error: unknown` with proper type narrowing via `instanceof Error`. The rest of the codebase correctly uses `err: unknown`.
+
+### Minor Issues (nice to fix)
+
+4. **App.tsx:23 — Dead code: `inputAutoFocusRef`.**
+   `useRef(false)` is set to `true` on line 46 in `handleCreateTree` but is never read by any component. Remove or implement the auto-focus behavior.
+
+5. **App.tsx:55,65 — Missing error handling in async event handlers.**
+   `handleSend` and `handleBranch` are async but have no try/catch. If `createTree()`, `createNode()`, or `sendMessage()` throws, the error becomes an unhandled promise rejection. The `useNodeStream` hook handles streaming errors internally, but `createTree`/`createNode` (Dexie writes) have no error boundary.
+
+6. **db/index.ts:21 — `(window as any).__db = db` uses `as any` cast.**
+   Dev-only debug exposure. Should use a global type augmentation: `declare global { interface Window { __db?: ThinkWithAIDatabase } }` to maintain type safety.
+
+7. **db/index.ts:26-27 — `navigator.storage.persist()` promise result ignored.**
+   The persist call is fire-and-forget. If the browser denies persistent storage, there's no notification. Should at least log the result in development.
+
+8. **ConversationPanel.tsx:16 — Broad Zustand store subscription.**
+   `const { nodes } = useTreeStore()` subscribes to the ENTIRE store. Any store change (trees, currentTreeId, view, etc.) triggers re-render. Should use a selector: `const nodes = useTreeStore(s => s.nodes)`.
+
+9. **App.tsx:10-21 — Same broad Zustand subscription.**
+   Destructures 9 fields from `useTreeStore()` without a selector. Every store update (including rapid streaming `updateLastMessage` calls) re-renders App. Should use granular selectors.
+
+10. **MessageBubble.tsx:31,49 — `any` type on ReactMarkdown component props.**
+    `code({ className, children, ...props }: any)` and `pre({ children }: any)` use `any` instead of proper ReactMarkdown component types.
+
+11. **TextSelectionPopup.tsx:30 — `setTimeout` not cleared on unmount.**
+    The 10ms `setTimeout` in the `mouseup` handler isn't tracked or cleared. If the component unmounts within those 10ms, `setVisible(true)` fires on an unmounted component. Should use a ref to clear pending timeouts in the cleanup function.
+
+12. **chat.ts:10 — No input validation on request body.**
+    `c.req.json<StreamRequest>()` trusts the body shape. Malformed requests (missing `message` field) would cause runtime errors in `streamText()`. Should validate required fields before proceeding.
+
+13. **useNodeStream.ts:94 — Non-null assertion `state.currentTreeId!`.**
+    The `!` operator asserts non-null but the guard on line 92 only checks `rootNode` existence, not `currentTreeId`. If `currentTreeId` is somehow null while `rootNode` exists, `updateTreeTitle(null!, ...)` would write to Dexie with a null key.
+
+14. **MindMap.tsx:83 — Hardcoded edge stroke color.**
+    `style: { stroke: '#e2e8f0', strokeWidth: 1.5 }` uses a raw hex value instead of the `--color-border` design token. Same issue on line 140 (`Background color="#e2e8f0"`). Should use `var(--color-border)` or the equivalent token.
+
+15. **App.tsx:68 — Hardcoded Chinese prompt template.**
+    `const firstMessage = \`请详细解释：\${selectedText}\`` is hardcoded. Should be configurable or at least extracted to a constants file.
+
+16. **chat.ts:42 — Hardcoded system prompt.**
+    The system prompt is an inline Chinese string. Should be configurable via env var or config file.
+
+### Anti-patterns Found
+
+1. **Broad Zustand store subscriptions** (App.tsx:10-21, ConversationPanel.tsx:16, MindMap.tsx:94)
+   Using `useTreeStore()` without selectors subscribes to all state changes. During streaming, `updateLastMessage` triggers re-renders of ALL subscribing components, even those that don't use `nodes`. Pattern: use `useTreeStore(s => s.specificField)` or `useShallow` for multi-field selectors.
+
+2. **`as any` / `any` type usage** (db/index.ts:21, MessageBubble.tsx:31,49, chat.ts:57)
+   Four instances of `any` across the codebase. The rest of the code correctly uses `unknown` in catch blocks. These should be typed properly.
+
+3. **Missing error boundaries around async handlers** (App.tsx:55,65)
+   React event handlers that call async functions should catch errors to prevent unhandled promise rejections. Consider a shared `withErrorHandling` wrapper or React Error Boundary for the tree view.
+
+4. **No server-side request validation** (chat.ts:10)
+   The API endpoint trusts client input without validation. Should use Zod or manual validation for the `StreamRequest` body.
+
+### Overall Assessment
+The codebase is well-structured with clean separation of concerns, consistent patterns, and good TypeScript usage overall. The most impactful bug is the **missing stream line buffer** in `useNodeStream.ts` which can cause silent data loss in AI responses. The `max-w` CSS conflict in MessageBubble may cause layout issues. The Zustand subscription pattern is the most pervasive anti-pattern and should be addressed to prevent unnecessary re-renders during streaming.
+
+## [Task F3] Real Manual QA
+### Completion Status
+✅ COMPLETE
+### Test Results
+| Flow | Result | Notes |
+|------|--------|-------|
+| 1. Empty State (1280x800) | ✅ PASS | "🌱 开始你的第一次探索" visible, CTA button present |
+| 2. Tree View + BUG-001 | ✅ PASS | MessageInput textarea visible when nodeId is null — BUG-001 fix confirmed |
+| 3. Panel Dimensions | ✅ PASS | Left: 35.0%, Right: 65.0% — matches expected split |
+| 4. Input Interaction | ✅ PASS | Typed text into textarea, send button enabled |
+| 5. Back Navigation | ✅ PASS | "← 返回列表" returns to list view correctly |
+| 6. Console Errors | ✅ PASS | 0 JS errors across all navigation flows |
+| 7. Min Width (1024x768) | ✅ PASS | Left: 35.0%, Right: 64.9% — layout intact |
+
+### BUG-001 Fix Verification
+✅ CONFIRMED: After clicking "+ 新建知识树", the ConversationPanel correctly shows MessageInput (textarea + send button) even when nodeId is null. This was the critical bug identified in Task 11 where ConversationPanel returned early without MessageInput when nodeId was null.
+
+### Issues Found
+None found. All 7 QA flows passed.
+
+### Evidence Screenshots
+- `.sisyphus/evidence/task-f3-01-empty-state.png`
+- `.sisyphus/evidence/task-f3-02-tree-view.png`
+- `.sisyphus/evidence/task-f3-03-input-typed.png`
+- `.sisyphus/evidence/task-f3-04-back-to-list.png`
+- `.sisyphus/evidence/task-f3-07-min-width.png`
