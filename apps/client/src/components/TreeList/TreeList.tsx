@@ -18,12 +18,12 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
       <div className="max-w-2xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-text-primary">Think With AI</h1>
-            <p className="text-sm text-text-secondary mt-1">探索式 AI 学习工具</p>
+            <h1 className="text-2xl font-semibold text-text-primary">牛马AI</h1>
+            <p className="text-sm text-text-secondary mt-1">AI 思考 · 探索式学习</p>
           </div>
           <button
             onClick={onCreateTree}
-            className="px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-indigo-600 transition-colors"
+            className="px-4 py-2 bg-brand text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
           >
             + 新建知识树
           </button>
@@ -40,7 +40,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
             <button
               onClick={onCreateTree}
               data-testid="create-tree-cta"
-              className="px-6 py-3 bg-brand text-white text-sm font-medium rounded-lg hover:bg-indigo-600 transition-colors"
+              className="px-6 py-3 bg-brand text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
             >
               开始探索
             </button>

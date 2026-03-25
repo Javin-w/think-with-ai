@@ -3,6 +3,8 @@ import Layout from './components/Layout'
 import ConversationPanel from './components/Chat/ConversationPanel'
 import MindMap from './components/MindMap/MindMap'
 import TreeList from './components/TreeList/TreeList'
+import TopNav from './components/TopNav/TopNav'
+import Homepage from './components/Homepage/Homepage'
 import { useTreeStore } from './store/treeStore'
 import { useAppStore } from './store/appStore'
 import { useNodeStream } from './hooks/useNodeStream'
@@ -64,60 +66,67 @@ function App() {
 
   const handleBranch = async (selectedText: string) => {
     if (!currentNodeId || isStreaming) return
-    const childNode = await createNode(currentNodeId, selectedText)
-    const firstMessage = `请详细解释：${selectedText}`
-    await sendMessage(childNode.id, firstMessage)
+    await createNode(currentNodeId, selectedText)
   }
 
-  switch (currentView) {
-    case 'home':
-      return <div>Homepage coming soon</div>
+  const renderView = () => {
+    switch (currentView) {
+      case 'home':
+        return <Homepage />
 
-    case 'news':
-      return <div>News coming soon</div>
+      case 'news':
+        return <div className="p-10 text-center text-text-secondary">News coming soon</div>
 
-    case 'doc':
-      return <div>Doc coming soon</div>
+      case 'doc':
+        return <div className="p-10 text-center text-text-secondary">Doc coming soon</div>
 
-    case 'prototype':
-      return <div>Prototype coming soon</div>
+      case 'prototype':
+        return <div className="p-10 text-center text-text-secondary">Prototype coming soon</div>
 
-    case 'thinking-list':
-      return (
-        <TreeList
-          trees={trees}
-          onSelectTree={handleSelectTree}
-          onCreateTree={handleCreateTree}
-        />
-      )
-
-    case 'thinking-tree':
-      return (
-        <div className="relative">
-          {/* Back button */}
-          <button
-            onClick={handleBackToList}
-            className="absolute top-3 left-3 z-10 px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary bg-white border border-border rounded-lg hover:border-brand transition-colors"
-          >
-            ← 返回列表
-          </button>
-          <Layout
-            leftPanel={<MindMap treeId={currentTreeId} />}
-            rightPanel={
-              <ConversationPanel
-                nodeId={currentNodeId}
-                onSend={handleSend}
-                onBranch={handleBranch}
-                isStreaming={isStreaming}
-              />
-            }
+      case 'thinking-list':
+        return (
+          <TreeList
+            trees={trees}
+            onSelectTree={handleSelectTree}
+            onCreateTree={handleCreateTree}
           />
-        </div>
-      )
+        )
 
-    default:
-      return <div>Homepage coming soon</div>
+      case 'thinking-tree':
+        return (
+          <div className="relative">
+            {/* Back button */}
+            <button
+              onClick={handleBackToList}
+              className="absolute top-3 left-3 z-10 px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary bg-white border border-border rounded-lg hover:border-brand transition-colors"
+            >
+              ← 返回列表
+            </button>
+            <Layout
+              leftPanel={<MindMap treeId={currentTreeId} />}
+              rightPanel={
+                <ConversationPanel
+                  nodeId={currentNodeId}
+                  onSend={handleSend}
+                  onBranch={handleBranch}
+                  isStreaming={isStreaming}
+                />
+              }
+            />
+          </div>
+        )
+
+      default:
+        return <Homepage />
+    }
   }
+
+  return (
+    <div className="min-h-screen">
+      <TopNav />
+      {renderView()}
+    </div>
+  )
 }
 
 export default App
