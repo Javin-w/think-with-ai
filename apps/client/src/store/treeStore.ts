@@ -8,7 +8,6 @@ interface TreeStore {
   nodes: TreeNode[]
   currentTreeId: string | null
   currentNodeId: string | null
-  view: 'list' | 'tree'
 
   // Actions
   loadTrees: () => Promise<void>
@@ -20,7 +19,6 @@ interface TreeStore {
   updateTreeTitle: (treeId: string, title: string) => Promise<void>
   setCurrentTree: (treeId: string | null) => void
   setCurrentNode: (nodeId: string | null) => void
-  setView: (view: 'list' | 'tree') => void
 }
 
 export const useTreeStore = create<TreeStore>((set, get) => ({
@@ -28,7 +26,6 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
   nodes: [],
   currentTreeId: null,
   currentNodeId: null,
-  view: 'list',
 
   loadTrees: async () => {
     const trees = await db.trees.orderBy('updatedAt').reverse().toArray()
@@ -63,7 +60,6 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
       nodes: [rootNode],
       currentTreeId: tree.id,
       currentNodeId: rootNode.id,
-      view: 'tree',
     }))
     return { tree, rootNode }
   },
@@ -127,5 +123,4 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
 
   setCurrentTree: (treeId) => set({ currentTreeId: treeId }),
   setCurrentNode: (nodeId) => set({ currentNodeId: nodeId }),
-  setView: (view) => set({ view }),
 }))

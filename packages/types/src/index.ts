@@ -36,6 +36,45 @@ export interface ChatMessage {
 }
 
 /**
+ * Chat mode determines which UI experience is used
+ */
+export type ChatMode = 'thinking' | 'document' | 'prototype';
+
+/**
+ * Represents a generic chat session (document, prototype, etc.)
+ */
+export interface ChatSession {
+  id: string;
+  type: ChatMode;
+  title: string;
+  messages: ChatMessage[];
+  output: string | null;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * Represents a single news item from a tech source
+ */
+export interface NewsItem {
+  id: string;
+  sourceId: string;
+  title: string;
+  url: string;
+  publishedAt: number;
+  summary: string;
+}
+
+/**
+ * Represents a response containing news items
+ */
+export interface NewsResponse {
+  items: NewsItem[];
+  lastUpdated: number;
+  sources: string[];
+}
+
+/**
  * Represents a request to stream a response from an AI provider
  */
 export interface StreamRequest {
@@ -43,4 +82,5 @@ export interface StreamRequest {
   context: ChatMessage[];
   provider?: string;    // 'openai' | 'anthropic'
   model?: string;
+  mode?: ChatMode;
 }

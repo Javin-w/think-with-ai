@@ -4,6 +4,7 @@ import ConversationPanel from './components/Chat/ConversationPanel'
 import MindMap from './components/MindMap/MindMap'
 import TreeList from './components/TreeList/TreeList'
 import { useTreeStore } from './store/treeStore'
+import { useAppStore } from './store/appStore'
 import { useNodeStream } from './hooks/useNodeStream'
 
 function App() {
@@ -11,21 +12,22 @@ function App() {
     trees,
     currentNodeId,
     currentTreeId,
-    view,
     loadTrees,
     loadTree,
     createTree,
     createNode,
-    setView,
     setCurrentNode,
   } = useTreeStore()
+  const { currentView, navigateTo } = useAppStore()
   const { sendMessage, isStreaming } = useNodeStream()
   const inputAutoFocusRef = useRef(false)
 
-  // Load trees on mount
+  // Load trees when entering thinking-list view
   useEffect(() => {
-    loadTrees()
-  }, [loadTrees])
+    if (currentView === 'thinking-list') {
+      loadTrees()
+    }
+  }, [currentView, loadTrees])
 
   const handleSelectTree = async (treeId: string) => {
     await loadTree(treeId)
@@ -35,21 +37,19 @@ function App() {
     if (rootNode) {
       setCurrentNode(rootNode.id)
     }
-    setView('tree')
+    navigateTo('thinking-tree')
   }
 
   const handleCreateTree = () => {
     // Switch to tree view with no current tree — first message will create the tree
-    setView('tree')
+    navigateTo('thinking-tree')
     // Reset current tree/node so first message creates a new tree
     useTreeStore.setState({ currentTreeId: null, currentNodeId: null, nodes: [] })
     inputAutoFocusRef.current = true
   }
 
   const handleBackToList = () => {
-    setView('list')
-    // Reload trees to get updated titles
-    loadTrees()
+    navigateTo('thinking-list')
   }
 
   const handleSend = async (message: string) => {
@@ -69,38 +69,55 @@ function App() {
     await sendMessage(childNode.id, firstMessage)
   }
 
-  if (view === 'list') {
-    return (
-      <TreeList
-        trees={trees}
-        onSelectTree={handleSelectTree}
-        onCreateTree={handleCreateTree}
-      />
-    )
-  }
+  switch (currentView) {
+    case 'home':
+      return <div>Homepage coming soon</div>
 
-  return (
-    <div className="relative">
-      {/* Back button */}
-      <button
-        onClick={handleBackToList}
-        className="absolute top-3 left-3 z-10 px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary bg-white border border-border rounded-lg hover:border-brand transition-colors"
-      >
-        ← 返回列表
-      </button>
-      <Layout
-        leftPanel={<MindMap treeId={currentTreeId} />}
-        rightPanel={
-          <ConversationPanel
-            nodeId={currentNodeId}
-            onSend={handleSend}
-            onBranch={handleBranch}
-            isStreaming={isStreaming}
+    case 'news':
+      return <div>News coming soon</div>
+
+    case 'doc':
+      return <div>Doc coming soon</div>
+
+    case 'prototype':
+      return <div>Prototype coming soon</div>
+
+    case 'thinking-list':
+      return (
+        <TreeList
+          trees={trees}
+          onSelectTree={handleSelectTree}
+          onCreateTree={handleCreateTree}
+        />
+      )
+
+    case 'thinking-tree':
+      return (
+        <div className="relative">
+          {/* Back button */}
+          <button
+            onClick={handleBackToList}
+            className="absolute top-3 left-3 z-10 px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary bg-white border border-border rounded-lg hover:border-brand transition-colors"
+          >
+            ← 返回列表
+          </button>
+          <Layout
+            leftPanel={<MindMap treeId={currentTreeId} />}
+            rightPanel={
+              <ConversationPanel
+                nodeId={currentNodeId}
+                onSend={handleSend}
+                onBranch={handleBranch}
+                isStreaming={isStreaming}
+              />
+            }
           />
-        }
-      />
-    </div>
-  )
+        </div>
+      )
+
+    default:
+      return <div>Homepage coming soon</div>
+  }
 }
 
 export default App

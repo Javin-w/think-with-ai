@@ -1,15 +1,21 @@
 import Dexie, { type Table } from 'dexie'
-import type { Tree, TreeNode } from '@repo/types'
+import type { Tree, TreeNode, ChatSession } from '@repo/types'
 
 export class ThinkWithAIDatabase extends Dexie {
   trees!: Table<Tree>
   nodes!: Table<TreeNode>
+  chatSessions!: Table<ChatSession>
 
   constructor() {
     super('ThinkWithAIDB')
     this.version(1).stores({
       trees: 'id, updatedAt',
       nodes: 'id, treeId, parentId, [treeId+parentId], createdAt',
+    })
+    this.version(2).stores({
+      trees: 'id, updatedAt',
+      nodes: 'id, treeId, parentId, [treeId+parentId], createdAt',
+      chatSessions: 'id, type, updatedAt',
     })
   }
 }
