@@ -3,12 +3,13 @@ import { streamText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import type { StreamRequest } from '@repo/types'
+import { SYSTEM_PROMPTS } from '../prompts'
 
 const chat = new Hono()
 
 chat.post('/', async (c) => {
   const body = await c.req.json<StreamRequest>()
-  const { message, context = [], provider, model } = body
+  const { message, context = [], provider, model, mode } = body
 
   const aiProvider = provider ?? process.env.AI_PROVIDER ?? 'openai'
   const aiModel = model ?? process.env.AI_MODEL ?? 'moonshot-v1-128k'
@@ -46,7 +47,7 @@ chat.post('/', async (c) => {
   try {
     const result = streamText({
       model: aiModelInstance,
-      system: '你是一个乐于助人的学习助手。用清晰、条理分明的方式解释概念。支持 Markdown 格式化输出。',
+      system: SYSTEM_PROMPTS[mode ?? 'thinking'],
       messages,
       abortSignal: abortController.signal,
     })

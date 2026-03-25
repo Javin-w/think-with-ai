@@ -8,6 +8,8 @@ import Homepage from './components/Homepage/Homepage'
 import { useTreeStore } from './store/treeStore'
 import { useAppStore } from './store/appStore'
 import { useNodeStream } from './hooks/useNodeStream'
+import DocModule from './components/Doc/DocModule'
+import PrototypeModule from './components/Prototype/PrototypeModule'
 
 function App() {
   const {
@@ -78,10 +80,10 @@ function App() {
         return <div className="p-10 text-center text-text-secondary">News coming soon</div>
 
       case 'doc':
-        return <div className="p-10 text-center text-text-secondary">Doc coming soon</div>
+        return <DocModule />
 
       case 'prototype':
-        return <div className="p-10 text-center text-text-secondary">Prototype coming soon</div>
+        return <PrototypeModule />
 
       case 'thinking-list':
         return (

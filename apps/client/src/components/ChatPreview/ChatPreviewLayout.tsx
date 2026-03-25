@@ -7,7 +7,7 @@ interface ChatPreviewLayoutProps {
 
 export default function ChatPreviewLayout({ chatPanel, previewPanel }: ChatPreviewLayoutProps) {
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] min-w-[1024px] font-sans text-text-primary bg-surface">
+    <div className="flex h-full min-w-[1024px] font-sans text-text-primary bg-surface">
       <div className="flex-[40] h-full overflow-auto bg-surface-secondary">
         {chatPanel}
       </div>
