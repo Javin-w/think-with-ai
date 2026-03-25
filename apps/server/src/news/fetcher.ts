@@ -16,6 +16,7 @@ const parser = new XMLParser({
 })
 
 export async function fetchRssArticles(source: RssSource): Promise<RawArticle[]> {
+  console.log(`[news] Fetching ${source.name} (${source.url})...`)
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 5000)
@@ -38,6 +39,7 @@ export async function fetchRssArticles(source: RssSource): Promise<RawArticle[]>
     const rssItems = parsed?.rss?.channel?.item
     if (rssItems) {
       const items = Array.isArray(rssItems) ? rssItems : [rssItems]
+      console.log(`[news] ${source.name}: got ${items.length} articles (RSS 2.0)`)
       return items.map((item: any) => ({
         title: item.title ?? '',
         link: item.link ?? '',
@@ -52,6 +54,7 @@ export async function fetchRssArticles(source: RssSource): Promise<RawArticle[]>
     const atomEntries = parsed?.feed?.entry
     if (atomEntries) {
       const entries = Array.isArray(atomEntries) ? atomEntries : [atomEntries]
+      console.log(`[news] ${source.name}: got ${entries.length} articles (Atom)`)
       return entries.map((entry: any) => ({
         title: entry.title ?? '',
         link: typeof entry.link === 'string' ? entry.link : (entry.link?.['@_href'] ?? ''),

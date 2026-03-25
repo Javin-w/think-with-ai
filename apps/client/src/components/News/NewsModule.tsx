@@ -12,7 +12,7 @@ function formatLastUpdated(timestamp: number | null): string {
 }
 
 export default function NewsModule() {
-  const { items, isLoading, lastUpdated, fetchNews, refreshNews } = useNewsStore()
+  const { items, isLoading, lastUpdated, error, fetchNews, refreshNews } = useNewsStore()
 
   useEffect(() => {
     fetchNews()
@@ -45,8 +45,20 @@ export default function NewsModule() {
 
         {/* Loading state */}
         {isLoading && items.length === 0 ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-sm text-text-secondary">正在获取最新新闻...</div>
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="w-6 h-6 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin" />
+            <div className="text-sm text-text-secondary">正在获取最新新闻，首次加载可能需要几秒...</div>
+          </div>
+        ) : error && items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <div className="text-3xl">⚠️</div>
+            <div className="text-sm text-text-secondary">{error}</div>
+            <button
+              onClick={refreshNews}
+              className="mt-2 px-4 py-2 text-sm text-white bg-[#4CAF50] rounded-lg hover:bg-[#43A047] transition-colors"
+            >
+              重试
+            </button>
           </div>
         ) : (
           <NewsFeed items={items} />

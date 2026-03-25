@@ -8,16 +8,21 @@ export async function summarizeArticle(
   title: string,
   description: string,
 ): Promise<string> {
+  const fallback = description.slice(0, 200) || title
   try {
     const model = createModelInstance()
+    const abortController = new AbortController()
+    const timeout = setTimeout(() => abortController.abort(), 10000)
     const { text } = await generateText({
       model,
       system: SUMMARIZE_PROMPT,
       prompt: `标题: ${title}\n摘要: ${description}`,
+      abortSignal: abortController.signal,
     })
-    return text.trim() || description.slice(0, 200)
+    clearTimeout(timeout)
+    return text.trim() || fallback
   } catch (error) {
     console.error('[news] Summarization failed:', error instanceof Error ? error.message : error)
-    return description.slice(0, 200)
+    return fallback
   }
 }

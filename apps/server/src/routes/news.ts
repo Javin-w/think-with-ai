@@ -47,10 +47,19 @@ async function refreshAllNews(): Promise<void> {
   updateCache(newsItems)
 }
 
-// GET / — return cached news; trigger background refresh if stale
-news.get('/', (c) => {
-  if (isCacheStale()) {
-    // Fire-and-forget background refresh
+// GET / — return cached news; wait on first load, background refresh after
+news.get('/', async (c) => {
+  const cached = getCachedNews()
+
+  if (cached.length === 0 && isCacheStale()) {
+    // First load: wait for refresh so user sees data
+    try {
+      await refreshAllNews()
+    } catch (err) {
+      console.error('[news] Initial refresh failed:', err)
+    }
+  } else if (isCacheStale()) {
+    // Has cached data but stale: background refresh
     refreshAllNews().catch((err) =>
       console.error('[news] Background refresh failed:', err),
     )
