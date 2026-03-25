@@ -8,12 +8,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/types": "workspace:*",
-    "@hono/node-server": "^1.13.0",
-    "hono": "^4.6.0",
-    "ai": "^4.0.0",
+    "@ai-sdk/anthropic": "^1.0.0",
     "@ai-sdk/openai": "^1.0.0",
-    "@ai-sdk/anthropic": "^1.0.0"
+    "@hono/node-server": "^1.13.0",
+    "@repo/types": "workspace:*",
+    "ai": "^4.0.0",
+    "fast-xml-parser": "^5.5.9",
+    "hono": "^4.6.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

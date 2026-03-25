@@ -1,9 +1,8 @@
 import { Hono } from 'hono'
 import { streamText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
-import { createAnthropic } from '@ai-sdk/anthropic'
 import type { StreamRequest } from '@repo/types'
 import { SYSTEM_PROMPTS } from '../prompts'
+import { createModelInstance } from '../providers'
 
 const chat = new Hono()
 
@@ -11,25 +10,7 @@ chat.post('/', async (c) => {
   const body = await c.req.json<StreamRequest>()
   const { message, context = [], provider, model, mode } = body
 
-  const aiProvider = provider ?? process.env.AI_PROVIDER ?? 'openai'
-  const aiModel = model ?? process.env.AI_MODEL ?? 'moonshot-v1-128k'
-
-  // Build the AI model instance
-  let aiModelInstance
-  if (aiProvider === 'anthropic') {
-    const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    aiModelInstance = anthropic(aiModel)
-  } else if (aiProvider === 'moonshot') {
-    // Kimi (Moonshot AI) — OpenAI-compatible API
-    const moonshot = createOpenAI({
-      apiKey: process.env.MOONSHOT_API_KEY,
-      baseURL: 'https://api.moonshot.cn/v1',
-    })
-    aiModelInstance = moonshot(aiModel)
-  } else {
-    const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
-    aiModelInstance = openai(aiModel)
-  }
+  const aiModelInstance = createModelInstance(provider, model)
 
   // Build messages array: context history + current user message
   const messages = [

@@ -10,6 +10,7 @@ import { useAppStore } from './store/appStore'
 import { useNodeStream } from './hooks/useNodeStream'
 import DocModule from './components/Doc/DocModule'
 import PrototypeModule from './components/Prototype/PrototypeModule'
+import NewsModule from './components/News/NewsModule'
 
 function App() {
   const {
@@ -77,7 +78,7 @@ function App() {
         return <Homepage />
 
       case 'news':
-        return <div className="p-10 text-center text-text-secondary">News coming soon</div>
+        return <NewsModule />
 
       case 'doc':
         return <DocModule />

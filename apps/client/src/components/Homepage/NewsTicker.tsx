@@ -1,4 +1,14 @@
+import { useNewsStore } from '../../store/newsStore'
+
+const PLACEHOLDER_TEXT = 'GPT-5 发布，多模态能力大幅提升 · Anthropic 推出 Claude 企业版 · 国内大模型竞争加剧'
+
 export default function NewsTicker() {
+  const items = useNewsStore((s) => s.items)
+
+  const tickerText = items.length > 0
+    ? items.slice(0, 5).map((item) => item.title).join(' · ')
+    : PLACEHOLDER_TEXT
+
   return (
     <div className="border-t border-border bg-white px-6 py-3">
       <div className="max-w-4xl mx-auto flex items-center gap-3">
@@ -6,7 +16,7 @@ export default function NewsTicker() {
           今日 AI 快讯
         </span>
         <p className="text-xs text-text-secondary truncate">
-          GPT-5 发布，多模态能力大幅提升 · Anthropic 推出 Claude 企业版 · 国内大模型竞争加剧
+          {tickerText}
         </p>
       </div>
     </div>
