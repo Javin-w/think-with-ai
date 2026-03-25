@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import crypto from 'node:crypto'
 import type { NewsItem } from '@repo/types'
 import { RSS_SOURCES } from '../news/sources'
-import { fetchRssArticles, type RawArticle } from '../news/fetcher'
+import { fetchRssArticles } from '../news/fetcher'
 import { getCachedNews, isCacheStale, updateCache, getLastFetchTime, isCached } from '../news/cache'
 import { summarizeArticle } from '../news/summarizer'
 
@@ -28,7 +28,7 @@ async function refreshAllNews(): Promise<void> {
   for (let i = 0; i < newArticles.length; i += 3) {
     const batch = newArticles.slice(i, i + 3)
     const summaries = await Promise.all(
-      batch.map((a) => summarizeArticle(a.title, a.description, a.language)),
+      batch.map((a) => summarizeArticle(a.title, a.description)),
     )
     for (let j = 0; j < batch.length; j++) {
       const article = batch[j]

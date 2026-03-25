@@ -7,7 +7,6 @@ const SUMMARIZE_PROMPT =
 export async function summarizeArticle(
   title: string,
   description: string,
-  language: string,
 ): Promise<string> {
   try {
     const model = createModelInstance()
