@@ -4,3 +4,7 @@ dist
 .sisyphus/evidence
 *.log
 .DS_Store
+e2e-reports/
+e2e-screenshots/
+.worktrees/
+.superpowers/
