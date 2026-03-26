@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useNewsStore } from '../../store/newsStore'
-import NewsFeed from './NewsFeed'
 
 function formatLastUpdated(timestamp: number | null): string {
   if (!timestamp) return '从未更新'
@@ -11,6 +12,11 @@ function formatLastUpdated(timestamp: number | null): string {
   return `${hours}小时前更新`
 }
 
+function formatDate(timestamp: number): string {
+  const d = new Date(timestamp)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export default function NewsModule() {
   const { items, isLoading, lastUpdated, error, fetchNews, refreshNews } = useNewsStore()
 
@@ -18,15 +24,25 @@ export default function NewsModule() {
     fetchNews()
   }, [fetchNews])
 
+  // Group items by date
+  const groupedByDate = items.reduce<Record<string, typeof items>>((acc, item) => {
+    const date = formatDate(item.publishedAt)
+    if (!acc[date]) acc[date] = []
+    acc[date].push(item)
+    return acc
+  }, {})
+
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a))
+
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-surface-secondary">
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">AI 新闻</h1>
             <p className="text-sm text-text-secondary mt-1">
-              聚合 AI 领域最新资讯，AI 自动摘要
+              数据来源：AI洞察日报
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -43,11 +59,11 @@ export default function NewsModule() {
           </div>
         </div>
 
-        {/* Loading state */}
+        {/* Loading */}
         {isLoading && items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <div className="w-6 h-6 border-2 border-[#4CAF50] border-t-transparent rounded-full animate-spin" />
-            <div className="text-sm text-text-secondary">正在获取最新新闻，首次加载可能需要几秒...</div>
+            <div className="text-sm text-text-secondary">正在获取最新 AI 资讯...</div>
           </div>
         ) : error && items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -61,7 +77,37 @@ export default function NewsModule() {
             </button>
           </div>
         ) : (
-          <NewsFeed items={items} />
+          /* Briefing style: grouped by date */
+          <div className="space-y-8">
+            {sortedDates.map((date) => (
+              <article key={date} className="bg-white rounded-xl border border-border p-6">
+                <h2 className="text-lg font-bold text-text-primary mb-4 pb-3 border-b border-border">
+                  📰 AI 资讯日报 {date}
+                </h2>
+                <div className="space-y-4">
+                  {groupedByDate[date].map((item) => (
+                    <div key={item.id} className="group">
+                      <a
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-text-primary hover:text-[#4CAF50] transition-colors"
+                      >
+                        {item.title}
+                      </a>
+                      {item.summary && (
+                        <div className="mt-1.5 text-sm text-text-secondary leading-relaxed prose prose-sm max-w-none">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {item.summary}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
         )}
       </div>
     </div>
