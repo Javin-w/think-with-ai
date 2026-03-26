@@ -3,10 +3,10 @@ import { useNewsStore } from '../../store/newsStore'
 const PLACEHOLDER_TEXT = 'GPT-5 发布，多模态能力大幅提升 · Anthropic 推出 Claude 企业版 · 国内大模型竞争加剧'
 
 export default function NewsTicker() {
-  const items = useNewsStore((s) => s.items)
+  const briefings = useNewsStore((s) => s.briefings)
 
-  const tickerText = items.length > 0
-    ? items.slice(0, 5).map((item) => item.title).join(' · ')
+  const tickerText = briefings.length > 0
+    ? briefings.slice(0, 3).map((b) => b.title).join(' · ')
     : PLACEHOLDER_TEXT
 
   return (
