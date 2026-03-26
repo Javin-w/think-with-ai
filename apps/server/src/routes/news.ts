@@ -1,68 +1,43 @@
 import { Hono } from 'hono'
-import crypto from 'node:crypto'
-import type { NewsItem } from '@repo/types'
-import { RSS_SOURCES } from '../news/sources'
-import { fetchRssArticles } from '../news/fetcher'
-import { getCachedNews, isCacheStale, updateCache, getLastFetchTime, isCached } from '../news/cache'
+import { getAllBriefings, getBriefing, createBriefing, updateBriefing, deleteBriefing } from '../news/store'
 
 const news = new Hono()
 
-function articleId(url: string): string {
-  return crypto.createHash('md5').update(url).digest('hex')
-}
-
-async function refreshAllNews(): Promise<void> {
-  const allRawArticles = await Promise.all(
-    RSS_SOURCES.map((source) => fetchRssArticles(source)),
-  )
-  const rawArticles = allRawArticles.flat()
-
-  const newArticles = rawArticles.filter((a) => !isCached(articleId(a.link)))
-  if (newArticles.length === 0) return
-
-  const newsItems: NewsItem[] = newArticles.map((article) => ({
-    id: articleId(article.link),
-    sourceId: article.sourceId,
-    title: article.title,
-    url: article.link,
-    publishedAt: new Date(article.pubDate).getTime() || Date.now(),
-    summary: article.description,
-  }))
-
-  updateCache(newsItems)
-}
-
-// GET / — return cached news; wait on first load, background refresh after
-news.get('/', async (c) => {
-  const cached = getCachedNews()
-
-  if (cached.length === 0 && isCacheStale()) {
-    try {
-      await refreshAllNews()
-    } catch (err) {
-      console.error('[news] Initial refresh failed:', err)
-    }
-  } else if (isCacheStale()) {
-    refreshAllNews().catch((err) =>
-      console.error('[news] Background refresh failed:', err),
-    )
-  }
-
-  return c.json({
-    items: getCachedNews(),
-    lastUpdated: getLastFetchTime(),
-    sources: RSS_SOURCES.map((s) => s.name),
-  })
+// GET / — list all briefings (without content)
+news.get('/', (c) => {
+  return c.json({ briefings: getAllBriefings() })
 })
 
-// POST /refresh — force refresh and return updated news
-news.post('/refresh', async (c) => {
-  await refreshAllNews()
-  return c.json({
-    items: getCachedNews(),
-    lastUpdated: getLastFetchTime(),
-    sources: RSS_SOURCES.map((s) => s.name),
-  })
+// GET /:id — get single briefing with content
+news.get('/:id', (c) => {
+  const briefing = getBriefing(c.req.param('id'))
+  if (!briefing) return c.json({ error: 'Not found' }, 404)
+  return c.json(briefing)
+})
+
+// POST / — create new briefing
+news.post('/', async (c) => {
+  const body = await c.req.json<{ title: string; content: string; date: string }>()
+  if (!body.title || !body.content || !body.date) {
+    return c.json({ error: 'title, content, and date are required' }, 400)
+  }
+  const briefing = createBriefing(body)
+  return c.json(briefing, 201)
+})
+
+// PUT /:id — update briefing
+news.put('/:id', async (c) => {
+  const body = await c.req.json<Partial<{ title: string; content: string; date: string }>>()
+  const updated = updateBriefing(c.req.param('id'), body)
+  if (!updated) return c.json({ error: 'Not found' }, 404)
+  return c.json(updated)
+})
+
+// DELETE /:id — delete briefing
+news.delete('/:id', (c) => {
+  const deleted = deleteBriefing(c.req.param('id'))
+  if (!deleted) return c.json({ error: 'Not found' }, 404)
+  return c.json({ ok: true })
 })
 
 export default news

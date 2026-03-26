@@ -1,55 +1,85 @@
 import { create } from 'zustand'
-import type { NewsItem } from '@repo/types'
+
+interface BriefingSummary {
+  id: string
+  title: string
+  date: string
+  createdAt: number
+}
+
+interface BriefingFull extends BriefingSummary {
+  content: string
+}
 
 interface NewsStore {
-  items: NewsItem[]
+  briefings: BriefingSummary[]
+  currentBriefing: BriefingFull | null
   isLoading: boolean
-  lastUpdated: number | null
   error: string | null
-  fetchNews: () => Promise<void>
-  refreshNews: () => Promise<void>
+  fetchBriefings: () => Promise<void>
+  fetchBriefing: (id: string) => Promise<void>
+  createBriefing: (data: { title: string; content: string; date: string }) => Promise<void>
+  deleteBriefing: (id: string) => Promise<void>
 }
 
 export const useNewsStore = create<NewsStore>((set, get) => ({
-  items: [],
+  briefings: [],
+  currentBriefing: null,
   isLoading: false,
-  lastUpdated: null,
   error: null,
 
-  fetchNews: async () => {
-    if (get().isLoading) return
+  fetchBriefings: async () => {
     set({ isLoading: true, error: null })
     try {
       const res = await fetch('/api/news')
-      if (!res.ok) throw new Error(`服务器错误 (${res.status})`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      set({
-        items: data.items,
-        lastUpdated: data.lastUpdated || null,
-      })
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : '获取新闻失败'
-      set({ error: msg })
+      set({ briefings: data.briefings })
+      // Auto-select first if none selected
+      if (!get().currentBriefing && data.briefings.length > 0) {
+        get().fetchBriefing(data.briefings[0].id)
+      }
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : '获取简报列表失败' })
     } finally {
       set({ isLoading: false })
     }
   },
 
-  refreshNews: async () => {
-    set({ isLoading: true, error: null })
+  fetchBriefing: async (id: string) => {
     try {
-      const res = await fetch('/api/news/refresh', { method: 'POST' })
-      if (!res.ok) throw new Error(`刷新失败 (${res.status})`)
+      const res = await fetch(`/api/news/${id}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      set({
-        items: data.items,
-        lastUpdated: data.lastUpdated || null,
+      set({ currentBriefing: data })
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : '获取简报失败' })
+    }
+  },
+
+  createBriefing: async (data) => {
+    try {
+      const res = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       })
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : '刷新新闻失败'
-      set({ error: msg })
-    } finally {
-      set({ isLoading: false })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await get().fetchBriefings()
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : '创建简报失败' })
+    }
+  },
+
+  deleteBriefing: async (id: string) => {
+    try {
+      const res = await fetch(`/api/news/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const { currentBriefing } = get()
+      if (currentBriefing?.id === id) set({ currentBriefing: null })
+      await get().fetchBriefings()
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : '删除简报失败' })
     }
   },
 }))
