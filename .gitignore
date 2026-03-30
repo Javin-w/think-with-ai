@@ -6,5 +6,6 @@ dist
 .DS_Store
 e2e-reports/
 e2e-screenshots/
+log/
 .worktrees/
 .superpowers/
