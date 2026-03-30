@@ -1,109 +1,134 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { ChatMessage } from '@repo/types'
-import { usePrototypeStore } from '../../store/chatSessionStore'
-import { useChatStream } from '../../hooks/useChatStream'
+import { useAgentStore } from '../../store/agentStore'
+import { useAgentStream } from '../../hooks/useAgentStream'
 import ChatPreviewLayout from '../ChatPreview/ChatPreviewLayout'
-import SimpleChatPanel from '../ChatPreview/SimpleChatPanel'
-import IframePreview from './IframePreview'
-
-/** Extract HTML from ```html ... ``` code block in AI response */
-function extractHtml(text: string): string {
-  const match = text.match(/```html\s*\n([\s\S]*?)```/)
-  return match ? match[1].trim() : ''
-}
+import IframePreview, { type IframePreviewHandle } from './IframePreview'
+import AgentChatPanel from './AgentChatPanel'
 
 export default function PrototypeModule() {
   const {
     currentSessionId,
     messages,
-    output,
-    isStreaming,
+    currentHtml,
+    plan,
+    steps,
+    isRunning,
     createSession,
     addMessage,
-    updateLastMessage,
-    setOutput,
-    setIsStreaming,
+    setCurrentHtml,
+    setPlan,
+    setSteps,
+    setIsRunning,
     saveSession,
-  } = usePrototypeStore()
+    resetCurrent,
+  } = useAgentStore()
 
-  const { sendMessage, isStreaming: streamIsActive, streamingContent } = useChatStream({ mode: 'prototype' })
+  const iframeRef = useRef<IframePreviewHandle>(null)
+
+  const agentStream = useAgentStream({
+    onFeedbackRequest: async () => {
+      // Extract DOM info from the iframe preview
+      if (iframeRef.current) {
+        return iframeRef.current.extractDOMInfo()
+      }
+      return '{"error": "preview not available"}'
+    },
+  })
   const savePendingRef = useRef(false)
 
-  // Sync streaming state to store
+  // Sync agent stream state to store
   useEffect(() => {
-    setIsStreaming(streamIsActive)
-  }, [streamIsActive, setIsStreaming])
+    setIsRunning(agentStream.isRunning)
+  }, [agentStream.isRunning, setIsRunning])
 
-  // Update output during streaming — extract HTML from streaming content
   useEffect(() => {
-    if (streamingContent) {
-      const html = extractHtml(streamingContent)
-      if (html) {
-        setOutput(html)
-      }
+    if (agentStream.currentHtml) {
+      setCurrentHtml(agentStream.currentHtml)
     }
-  }, [streamingContent, setOutput])
+  }, [agentStream.currentHtml, setCurrentHtml])
 
-  // Save session when streaming finishes
   useEffect(() => {
-    if (!streamIsActive && savePendingRef.current) {
+    if (agentStream.plan) {
+      setPlan(agentStream.plan)
+    }
+  }, [agentStream.plan, setPlan])
+
+  useEffect(() => {
+    if (agentStream.steps.length > 0) {
+      setSteps(agentStream.steps)
+    }
+  }, [agentStream.steps, setSteps])
+
+  // Save session when agent finishes
+  useEffect(() => {
+    if (!agentStream.isRunning && savePendingRef.current) {
       savePendingRef.current = false
+      // Add completion text as assistant message
+      if (agentStream.completionText) {
+        addMessage({
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: agentStream.completionText,
+          createdAt: Date.now(),
+        })
+      }
       saveSession()
     }
-  }, [streamIsActive, saveSession])
+  }, [agentStream.isRunning, agentStream.completionText, addMessage, saveSession])
 
-  const handleSend = useCallback(async (text: string) => {
-    let sessionId = currentSessionId
-    if (!sessionId) {
-      const session = await createSession(text.slice(0, 60))
-      sessionId = session.id
-    }
-
-    const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content: text,
-      createdAt: Date.now(),
-    }
-    addMessage(userMsg)
-
-    const assistantMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'assistant',
-      content: '',
-      createdAt: Date.now(),
-    }
-    addMessage(assistantMsg)
-
-    savePendingRef.current = true
-
-    try {
-      const currentMessages = usePrototypeStore.getState().messages
-      const contextMessages = currentMessages.slice(0, -1)
-      const fullResponse = await sendMessage(contextMessages, text)
-      updateLastMessage(fullResponse)
-      const html = extractHtml(fullResponse)
-      if (html) {
-        setOutput(html)
+  const handleSend = useCallback(
+    async (text: string) => {
+      let sessionId = currentSessionId
+      if (!sessionId) {
+        const session = await createSession(text.slice(0, 60))
+        sessionId = session.id
       }
-    } catch {
-      updateLastMessage('生成失败，请重试。')
-    }
-  }, [currentSessionId, createSession, addMessage, updateLastMessage, setOutput, sendMessage])
+
+      // Add user message to store
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: text,
+        createdAt: Date.now(),
+      }
+      addMessage(userMsg)
+      savePendingRef.current = true
+
+      // Build existing messages for context
+      const storeMessages = useAgentStore.getState().messages
+      const existingMessages = storeMessages.slice(0, -1).map((m) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }))
+
+      // Build existing state for iterative modifications
+      const storeState = useAgentStore.getState()
+      const existingState = storeState.currentHtml
+        ? {
+            plan: storeState.plan,
+            currentHtml: storeState.currentHtml,
+            htmlSnapshots: [],
+            requirementSummary: '',
+          }
+        : undefined
+
+      await agentStream.runAgent({
+        message: text,
+        sessionId,
+        existingState,
+        existingMessages: existingMessages.length > 0 ? existingMessages : undefined,
+      })
+    },
+    [currentSessionId, createSession, addMessage, agentStream]
+  )
 
   const handleNewPrototype = useCallback(() => {
-    usePrototypeStore.setState({
-      currentSessionId: null,
-      messages: [],
-      output: '',
-    })
-  }, [])
-
-  // Memoize the extracted HTML for the preview to avoid re-parsing on every render
-  const previewHtml = useMemo(() => output, [output])
+    resetCurrent()
+  }, [resetCurrent])
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col h-full">
       {/* Top toolbar */}
       <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-surface">
         <button
@@ -118,16 +143,23 @@ export default function PrototypeModule() {
       <div className="flex-1 min-h-0">
         <ChatPreviewLayout
           chatPanel={
-            <SimpleChatPanel
+            <AgentChatPanel
               messages={messages}
+              steps={steps}
+              plan={plan}
+              isRunning={isRunning}
+              clarifyQuestions={agentStream.clarifyQuestions}
+              error={agentStream.error}
               onSend={handleSend}
-              isStreaming={isStreaming}
-              placeholder="描述你想要的页面原型..."
-              emptyStateIcon="🖥️"
-              emptyStateText="描述你的需求，AI 将生成可运行的原型"
             />
           }
-          previewPanel={<IframePreview htmlContent={previewHtml} />}
+          previewPanel={
+            <IframePreview
+              ref={iframeRef}
+              htmlContent={currentHtml}
+              onQuickEdit={currentHtml ? handleSend : undefined}
+            />
+          }
         />
       </div>
     </div>

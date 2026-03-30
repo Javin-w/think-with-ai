@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { Plus, ArrowRight } from 'lucide-react'
 
 interface MessageInputProps {
   onSend: (message: string) => void
@@ -6,7 +7,7 @@ interface MessageInputProps {
   placeholder?: string
 }
 
-export default function MessageInput({ onSend, disabled = false, placeholder = '输入你的问题...' }: MessageInputProps) {
+export default function MessageInput({ onSend, disabled = false, placeholder = '回复...' }: MessageInputProps) {
   const [value, setValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -22,7 +23,6 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
     if (!trimmed || disabled) return
     onSend(trimmed)
     setValue('')
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
@@ -30,15 +30,15 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value)
-    // Auto-resize textarea
     const el = e.target
     el.style.height = 'auto'
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`
   }
 
   return (
-    <div className="border-t border-border p-4 bg-surface">
-      <div className="flex gap-3 items-end">
+    <div className="p-4">
+      <div className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden">
+        {/* Textarea area */}
         <textarea
           ref={textareaRef}
           value={value}
@@ -47,18 +47,29 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
           disabled={disabled}
           placeholder={placeholder}
           rows={1}
-          className="flex-1 resize-none rounded-lg border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ minHeight: '40px', maxHeight: '200px' }}
+          className="w-full resize-none px-4 pt-3 pb-1 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed bg-transparent"
+          style={{ minHeight: '36px', maxHeight: '200px' }}
         />
-        <button
-          onClick={handleSend}
-          disabled={disabled || !value.trim()}
-          className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0"
-        >
-          发送
-        </button>
+        {/* Bottom toolbar */}
+        <div className="flex items-center justify-between px-3 pb-2.5">
+          <div className="flex items-center gap-0.5">
+            <button className="w-8 h-8 flex items-center justify-center text-text-secondary/30 hover:text-text-secondary/60 rounded-full transition-colors">
+              <Plus size={18} strokeWidth={1.5} />
+            </button>
+          </div>
+          <button
+            onClick={handleSend}
+            disabled={disabled || !value.trim()}
+            className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${
+              value.trim() && !disabled
+                ? 'bg-text-primary text-white hover:bg-text-primary/80'
+                : 'bg-slate-100 text-text-secondary/30'
+            }`}
+          >
+            <ArrowRight size={16} strokeWidth={2} />
+          </button>
+        </div>
       </div>
-      <p className="text-xs text-text-secondary mt-1">Enter 发送 · Shift+Enter 换行</p>
     </div>
   )
 }

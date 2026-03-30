@@ -5,7 +5,7 @@ import { useNewsStore } from '../../store/newsStore'
 import { useAppStore } from '../../store/appStore'
 
 export default function NewsModule() {
-  const { briefings, currentBriefing, isLoading, fetchBriefings, fetchBriefing } = useNewsStore()
+  const { briefings, currentBriefing, isLoading, isFetching, fetchBriefings, fetchBriefing, fetchDaily } = useNewsStore()
   const { navigateTo } = useAppStore()
 
   useEffect(() => {
@@ -13,7 +13,7 @@ export default function NewsModule() {
   }, [fetchBriefings])
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)]">
+    <div className="flex h-full">
       {/* Left: date list */}
       <div className="w-56 shrink-0 border-r border-border bg-surface overflow-y-auto">
         <div className="p-4 border-b border-border flex items-center justify-between">
@@ -64,9 +64,16 @@ export default function NewsModule() {
             </article>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-text-secondary">
-            <div className="text-4xl mb-3">📰</div>
-            <p className="text-sm">暂无简报，点击右上角"管理"上传</p>
+          <div className="flex flex-col items-center justify-center h-full text-text-secondary gap-3">
+            <div className="text-4xl">📰</div>
+            <p className="text-sm">暂无简报</p>
+            <button
+              onClick={() => fetchDaily()}
+              disabled={isFetching}
+              className="px-4 py-2 text-sm font-medium text-white bg-[#4CAF50] rounded-lg hover:bg-[#43A047] disabled:opacity-50 transition-colors"
+            >
+              {isFetching ? '抓取中...' : '抓取今日 AI 日报'}
+            </button>
           </div>
         )}
       </div>

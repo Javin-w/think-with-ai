@@ -7,7 +7,7 @@ interface LayoutProps {
 
 export default function Layout({ leftPanel, rightPanel }: LayoutProps) {
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] min-w-[1024px] font-sans text-text-primary bg-surface">
+    <div className="flex h-[calc(100vh-2.5rem)] min-w-[1024px] font-sans text-text-primary bg-surface">
       {/* Left panel — mind map area (35%) */}
       <div
         data-testid="left-panel"

@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { getAllBriefings, getBriefing, createBriefing, updateBriefing, deleteBriefing } from '../news/store'
+import { fetchDailyReport } from '../news/scraper'
 
 const news = new Hono()
 
@@ -23,6 +24,22 @@ news.post('/', async (c) => {
   }
   const briefing = createBriefing(body)
   return c.json(briefing, 201)
+})
+
+// POST /fetch-daily — scrape ai.hubtoday.app for a specific date
+news.post('/fetch-daily', async (c) => {
+  const body = await c.req.json<{ date?: string }>().catch(() => ({}))
+  const date = (body as any).date || new Date().toISOString().slice(0, 10)
+
+  try {
+    const { title, content } = await fetchDailyReport(date)
+    const briefing = createBriefing({ title, content, date })
+    return c.json(briefing, 201)
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Scrape failed'
+    console.error('[news] Scrape failed:', msg)
+    return c.json({ error: msg }, 500)
+  }
 })
 
 // PUT /:id — update briefing

@@ -1,7 +1,16 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
 import rehypeHighlight from 'rehype-highlight'
+import rehypeKatex from 'rehype-katex'
+import 'katex/dist/katex.min.css'
 import type { ChatMessage } from '@repo/types'
+
+function preprocessLatex(content: string): string {
+  return content
+    .replace(/\\\[([\s\S]*?)\\\]/g, '\n$$\n$1\n$$\n')
+    .replace(/\\\(([\s\S]*?)\\\)/g, ' $$$1$$ ')
+}
 
 interface MessageBubbleProps {
   message: ChatMessage
@@ -26,8 +35,8 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
       >
         <div className="prose prose-sm max-w-none">
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeHighlight, rehypeKatex]}
             components={{
               code({ className, children, ...props }: any) {
                 const isBlock = className?.includes('language-')
@@ -52,7 +61,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
               },
             }}
           >
-            {message.content}
+            {preprocessLatex(message.content)}
           </ReactMarkdown>
         </div>
       </div>

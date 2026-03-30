@@ -3,12 +3,13 @@ import { useNewsStore } from '../../store/newsStore'
 import { useAppStore } from '../../store/appStore'
 
 export default function NewsAdmin() {
-  const { briefings, fetchBriefings, createBriefing, deleteBriefing } = useNewsStore()
+  const { briefings, isFetching, error, fetchBriefings, createBriefing, deleteBriefing, fetchDaily } = useNewsStore()
   const { navigateTo } = useAppStore()
   const [title, setTitle] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [content, setContent] = useState('')
   const [publishing, setPublishing] = useState(false)
+  const [scrapeDate, setScrapeDate] = useState(new Date().toISOString().slice(0, 10))
 
   useEffect(() => {
     fetchBriefings()
@@ -25,7 +26,7 @@ export default function NewsAdmin() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-surface-secondary">
+    <div className="min-h-full bg-surface-secondary">
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -38,9 +39,33 @@ export default function NewsAdmin() {
           </button>
         </div>
 
+        {/* Scrape section */}
+        <div className="bg-white rounded-xl border border-border p-6 mb-6">
+          <h2 className="text-base font-semibold text-text-primary mb-3">抓取 AI 日报</h2>
+          <p className="text-xs text-text-secondary mb-3">从 ai.hubtoday.app 抓取指定日期的 AI 资讯日报</p>
+          {error && (
+            <div className="text-xs text-red-500 mb-3 p-2 bg-red-50 rounded">{error}</div>
+          )}
+          <div className="flex items-center gap-3">
+            <input
+              type="date"
+              value={scrapeDate}
+              onChange={(e) => setScrapeDate(e.target.value)}
+              className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:border-[#4CAF50]"
+            />
+            <button
+              onClick={() => fetchDaily(scrapeDate)}
+              disabled={isFetching}
+              className="px-6 py-2 text-sm font-medium text-white bg-[#4CAF50] rounded-lg hover:bg-[#43A047] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isFetching ? '抓取中...' : '抓取日报'}
+            </button>
+          </div>
+        </div>
+
         {/* Create form */}
         <div className="bg-white rounded-xl border border-border p-6 mb-8">
-          <h2 className="text-base font-semibold text-text-primary mb-4">发布新简报</h2>
+          <h2 className="text-base font-semibold text-text-primary mb-4">手动发布简报</h2>
           <div className="flex gap-3 mb-3">
             <input
               type="text"

@@ -14,6 +14,21 @@ export function createModelInstance(provider?: string, model?: string) {
     const moonshot = createOpenAI({
       apiKey: process.env.MOONSHOT_API_KEY,
       baseURL: 'https://api.moonshot.cn/v1',
+      // Kimi-K2.5 enables thinking by default, which causes
+      // "reasoning_content is missing" errors with AI SDK tool calls.
+      // Passing fetch wrapper to inject extra_body to disable thinking.
+      fetch: async (url, init) => {
+        if (init?.body && typeof init.body === 'string') {
+          try {
+            const body = JSON.parse(init.body)
+            body.thinking = { type: 'disabled' }
+            init = { ...init, body: JSON.stringify(body) }
+          } catch {
+            // ignore parse errors
+          }
+        }
+        return globalThis.fetch(url, init)
+      },
     })
     return moonshot(aiModel)
   }

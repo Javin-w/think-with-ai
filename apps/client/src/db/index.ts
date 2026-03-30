@@ -17,6 +17,17 @@ export class ThinkWithAIDatabase extends Dexie {
       nodes: 'id, treeId, parentId, [treeId+parentId], createdAt',
       chatSessions: 'id, type, updatedAt',
     })
+    this.version(3).stores({
+      trees: 'id, updatedAt',
+      nodes: 'id, treeId, parentId, [treeId+parentId], createdAt',
+      chatSessions: 'id, type, updatedAt',
+    })
+    // v4: annotations field added as optional object property (no index changes)
+    this.version(4).stores({
+      trees: 'id, updatedAt',
+      nodes: 'id, treeId, parentId, [treeId+parentId], createdAt',
+      chatSessions: 'id, type, updatedAt',
+    })
   }
 }
 

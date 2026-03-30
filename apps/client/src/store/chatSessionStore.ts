@@ -109,5 +109,4 @@ function createChatSessionStore(type: ChatMode) {
   }))
 }
 
-export const useDocStore = createChatSessionStore('document')
 export const usePrototypeStore = createChatSessionStore('prototype')

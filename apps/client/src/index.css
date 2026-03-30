@@ -1,8 +1,9 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme {
-  --color-brand: #4CAF50;
-  --color-brand-hover: #43A047;
+  --color-brand: #3370FF;
+  --color-brand-hover: #245BDB;
   --color-surface: #ffffff;
   --color-surface-secondary: #f8fafc;
   --color-border: #e2e8f0;

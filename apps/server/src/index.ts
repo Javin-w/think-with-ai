@@ -3,6 +3,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import chat from './routes/chat'
 import news from './routes/news'
+import agent from './routes/agent'
+import exportRoute from './routes/export'
 
 const app = new Hono()
 
@@ -10,6 +12,8 @@ app.use('/api/*', cors())
 
 app.route('/api/chat', chat)
 app.route('/api/news', news)
+app.route('/api/agent', agent)
+app.route('/api/export', exportRoute)
 
 app.get('/api/health', (c) => {
   return c.json({ status: 'ok' })

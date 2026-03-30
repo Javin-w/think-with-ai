@@ -16,16 +16,19 @@ interface NewsStore {
   currentBriefing: BriefingFull | null
   isLoading: boolean
   error: string | null
+  isFetching: boolean
   fetchBriefings: () => Promise<void>
   fetchBriefing: (id: string) => Promise<void>
   createBriefing: (data: { title: string; content: string; date: string }) => Promise<void>
   deleteBriefing: (id: string) => Promise<void>
+  fetchDaily: (date?: string) => Promise<void>
 }
 
 export const useNewsStore = create<NewsStore>((set, get) => ({
   briefings: [],
   currentBriefing: null,
   isLoading: false,
+  isFetching: false,
   error: null,
 
   fetchBriefings: async () => {
@@ -80,6 +83,26 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
       await get().fetchBriefings()
     } catch (e) {
       set({ error: e instanceof Error ? e.message : '删除简报失败' })
+    }
+  },
+
+  fetchDaily: async (date?: string) => {
+    set({ isFetching: true, error: null })
+    try {
+      const res = await fetch('/api/news/fetch-daily', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: date || new Date().toISOString().slice(0, 10) }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+        throw new Error(data.error || `HTTP ${res.status}`)
+      }
+      await get().fetchBriefings()
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : '抓取日报失败' })
+    } finally {
+      set({ isFetching: false })
     }
   },
 }))

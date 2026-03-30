@@ -31,6 +31,7 @@ chat.post('/', async (c) => {
       system: SYSTEM_PROMPTS[mode ?? 'thinking'],
       messages,
       abortSignal: abortController.signal,
+      temperature: 0.6,
     })
 
     // Return SSE stream response

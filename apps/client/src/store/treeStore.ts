@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Tree, TreeNode, ChatMessage } from '@repo/types'
+import type { Tree, TreeNode, ChatMessage, Annotation } from '@repo/types'
 import { db } from '../db/index'
 
 interface TreeStore {
@@ -19,6 +19,9 @@ interface TreeStore {
   updateTreeTitle: (treeId: string, title: string) => Promise<void>
   setCurrentTree: (treeId: string | null) => void
   setCurrentNode: (nodeId: string | null) => void
+  getChildNodes: (nodeId: string) => TreeNode[]
+  addAnnotation: (nodeId: string, annotation: Annotation) => Promise<void>
+  removeAnnotation: (nodeId: string, annotationId: string) => Promise<void>
 }
 
 export const useTreeStore = create<TreeStore>((set, get) => ({
@@ -123,4 +126,34 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
 
   setCurrentTree: (treeId) => set({ currentTreeId: treeId }),
   setCurrentNode: (nodeId) => set({ currentNodeId: nodeId }),
+
+  getChildNodes: (nodeId: string) => {
+    return get().nodes.filter(n => n.parentId === nodeId)
+  },
+
+  addAnnotation: async (nodeId, annotation) => {
+    const { nodes } = get()
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node) return
+    const annotations = [...(node.annotations || []), annotation]
+    await db.nodes.update(nodeId, { annotations })
+    set(state => ({
+      nodes: state.nodes.map(n =>
+        n.id === nodeId ? { ...n, annotations } : n
+      ),
+    }))
+  },
+
+  removeAnnotation: async (nodeId, annotationId) => {
+    const { nodes } = get()
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node) return
+    const annotations = (node.annotations || []).filter(a => a.id !== annotationId)
+    await db.nodes.update(nodeId, { annotations })
+    set(state => ({
+      nodes: state.nodes.map(n =>
+        n.id === nodeId ? { ...n, annotations } : n
+      ),
+    }))
+  },
 }))
