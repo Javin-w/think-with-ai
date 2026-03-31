@@ -17,7 +17,10 @@ export function refineBriefing(rawContent: string): string {
     /扫码关注[^\n]*/gi,
     /!\[.*?二维码.*?\]\(.*?\)/gi,  // QR code images
     /\[.*?进群.*?\]\(.*?\)/gi,     // group invite links
-    />\s*[""\u201c].*?(AI资讯|每日早读|全网数据聚合|前沿科学探索|行业自由发声|开源创新力量|AI与人类未来|访问网页版|进群交流).*?[""\u201d]\s*\n*/gi, // tag blockquotes
+    />\s*[""\u201c].*?(AI资讯|每日早读|全网数据聚合|前沿科学探索|行业自由发声|开源创新力量|AI与人类未来|访问网页版|进群交流).*?[""\u201d].*\n*/gi, // tag blockquotes
+    /<!--\s*来源:.*?-->\s*\n*/gi,  // source comments
+    /[""\u201c]\s*`?AI资讯`?\s*[|｜].*?[""\u201d].*\n*/gi,  // tag line without blockquote marker
+    /`AI资讯`\s*[|｜]\s*`每日早读`.*\n*/gi,  // backtick-formatted tag line
   ]
 
   for (const pattern of noisePatterns) {
