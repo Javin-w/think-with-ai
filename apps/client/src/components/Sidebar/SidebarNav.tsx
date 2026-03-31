@@ -1,11 +1,16 @@
 import type { ReactNode } from 'react'
-import { Newspaper, Palette, Brain } from 'lucide-react'
+import { BookOpen, Palette, Brain } from 'lucide-react'
 import { useAppStore, type AppView } from '../../store/appStore'
 
-const NAV_ITEMS: Array<{ icon: ReactNode; label: string; view: AppView }> = [
-  { icon: <Newspaper className="w-4 h-4" />, label: 'AI 新闻', view: 'news' },
+interface NavItem { icon: ReactNode; label: string; view: AppView }
+
+const TOOLS: NavItem[] = [
+  { icon: <Brain className="w-4 h-4" />, label: 'AI 学习', view: 'thinking-list' },
   { icon: <Palette className="w-4 h-4" />, label: 'AI 原型', view: 'prototype' },
-  { icon: <Brain className="w-4 h-4" />, label: 'AI 思考', view: 'thinking-list' },
+]
+
+const INFO: NavItem[] = [
+  { icon: <BookOpen className="w-4 h-4" />, label: '每日早读', view: 'news' },
 ]
 
 export default function SidebarNav() {
@@ -15,28 +20,33 @@ export default function SidebarNav() {
     if (view === 'thinking-list') {
       return currentView === 'thinking-list' || currentView === 'thinking-tree'
     }
-    if (view === 'news') {
-      return currentView === 'news'
-    }
     return currentView === view
   }
 
+  const renderItem = (item: NavItem) => (
+    <button
+      key={item.view}
+      onClick={() => navigateTo(item.view)}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+        isActive(item.view)
+          ? 'bg-brand/10 text-brand font-medium'
+          : 'text-text-secondary hover:bg-gray-100 hover:text-text-primary'
+      }`}
+    >
+      {item.icon}
+      <span>{item.label}</span>
+    </button>
+  )
+
   return (
-    <nav className="space-y-0.5">
-      {NAV_ITEMS.map((item) => (
-        <button
-          key={item.view}
-          onClick={() => navigateTo(item.view)}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-            isActive(item.view)
-              ? 'bg-brand/10 text-brand font-medium'
-              : 'text-text-secondary hover:bg-gray-100 hover:text-text-primary'
-          }`}
-        >
-          {item.icon}
-          <span>{item.label}</span>
-        </button>
-      ))}
+    <nav>
+      <div className="space-y-0.5">
+        {TOOLS.map(renderItem)}
+      </div>
+      <div className="my-2 mx-1 border-t border-border/50" />
+      <div className="space-y-0.5">
+        {INFO.map(renderItem)}
+      </div>
     </nav>
   )
 }

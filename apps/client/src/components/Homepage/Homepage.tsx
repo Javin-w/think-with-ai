@@ -98,7 +98,7 @@ export default function Homepage() {
                   }`}
                 >
                   <Brain className="w-3.5 h-3.5" />
-                  <span>AI 思考</span>
+                  <span>AI 学习</span>
                   {mode === 'thinking' && <span className="text-[10px] opacity-60 ml-0.5">探索概念，构建知识树</span>}
                 </button>
                 <button
@@ -154,7 +154,7 @@ export default function Homepage() {
                 onClick={() => navigateTo('news')}
                 className="text-xs text-brand hover:underline"
               >
-                前往 AI 新闻同步 →
+                前往每日早读同步 →
               </button>
             </div>
           )}
