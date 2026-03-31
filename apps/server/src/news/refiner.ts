@@ -28,9 +28,10 @@ export function refineBriefing(rawContent: string): string {
   }
 
   // In numbered/bulleted lists, split "**Title.**Description" so title is on its own line
+  // Use two trailing spaces + newline for Markdown line break
   content = content.replace(
     /^(\s*\d+\.\s+)\*\*(.+?[。！？.!?])\*\*/gm,
-    '$1**$2**<br>'
+    '$1**$2**  \n'
   )
 
   // Clean up excessive blank lines
