@@ -14,15 +14,8 @@
   --radius-lg: 12px;
 }
 
-/* News article: first strong in list items is a title */
-.news-article ol > li > strong:first-child,
-.news-article ul > li > strong:first-child {
-  display: block;
-  font-size: 1.05em;
-  margin-bottom: 2px;
-}
-/* Ensure text after the title strong is not bold */
-.news-article ol > li,
-.news-article ul > li {
-  font-weight: normal;
+/* News article: spacing between list items */
+.news-article ol > li + li,
+.news-article ul > li + li {
+  margin-top: 1em;
 }

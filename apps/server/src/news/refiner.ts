@@ -27,11 +27,10 @@ export function refineBriefing(rawContent: string): string {
     content = content.replace(pattern, '')
   }
 
-  // In numbered/bulleted lists, split "**Title.**Description" into separate lines
-  // so the bold title renders as a heading and description as body text
+  // In numbered/bulleted lists, split "**Title.**Description" so title is on its own line
   content = content.replace(
     /^(\s*\d+\.\s+)\*\*(.+?[。！？.!?])\*\*/gm,
-    '$1**$2**\\\n   '
+    '$1**$2**<br>'
   )
 
   // Clean up excessive blank lines
