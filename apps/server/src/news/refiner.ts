@@ -7,7 +7,7 @@ export function refineBriefing(rawContent: string): string {
 
   // Remove social media / channel promotion blocks
   const noisePatterns = [
-    /#+\s*(多渠道|AI资讯日报多渠道)[^\n]*\n[\s\S]*$/im,  // "多渠道信息" section at end
+    /#+\s*\**\s*(多渠道|AI资讯日报多渠道)[^\n]*\n[\s\S]*$/im,  // "多渠道信息" section and everything after
     /\*{0,2}微信公众号\*{0,2}[：:].*/gi,
     /\*{0,2}抖音\*{0,2}[：:].*/gi,
     /\*{0,2}小宇宙\*{0,2}[：:].*/gi,
