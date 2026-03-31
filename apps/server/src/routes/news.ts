@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { getAllBriefings, getBriefing, createBriefing, updateBriefing, deleteBriefing } from '../news/store'
 import { fetchDailyReport } from '../news/scraper'
+import { refineBriefing } from '../news/refiner'
 
 const news = new Hono()
 
@@ -32,7 +33,8 @@ news.post('/fetch-daily', async (c) => {
   const date = (body as any).date || new Date().toISOString().slice(0, 10)
 
   try {
-    const { title, content } = await fetchDailyReport(date)
+    const { title, content: rawContent } = await fetchDailyReport(date)
+    const content = await refineBriefing(rawContent, date)
     const briefing = createBriefing({ title, content, date })
     return c.json(briefing, 201)
   } catch (error) {
