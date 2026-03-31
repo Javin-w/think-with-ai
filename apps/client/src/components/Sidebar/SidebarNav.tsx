@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react'
+import { Newspaper, Palette, Brain } from 'lucide-react'
 import { useAppStore, type AppView } from '../../store/appStore'
 
-const NAV_ITEMS: Array<{ icon: string; label: string; view: AppView }> = [
-  { icon: '📰', label: 'AI 新闻', view: 'news' },
-  { icon: '🎨', label: 'AI 原型', view: 'prototype' },
-  { icon: '🧠', label: 'AI 思考', view: 'thinking-list' },
+const NAV_ITEMS: Array<{ icon: ReactNode; label: string; view: AppView }> = [
+  { icon: <Newspaper className="w-4 h-4" />, label: 'AI 新闻', view: 'news' },
+  { icon: <Palette className="w-4 h-4" />, label: 'AI 原型', view: 'prototype' },
+  { icon: <Brain className="w-4 h-4" />, label: 'AI 思考', view: 'thinking-list' },
 ]
 
 export default function SidebarNav() {
@@ -31,7 +33,7 @@ export default function SidebarNav() {
               : 'text-text-secondary hover:bg-gray-100 hover:text-text-primary'
           }`}
         >
-          <span className="text-base">{item.icon}</span>
+          {item.icon}
           <span>{item.label}</span>
         </button>
       ))}

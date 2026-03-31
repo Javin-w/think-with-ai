@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { Brain, Palette, Newspaper, Lightbulb, Send, ArrowRight } from 'lucide-react'
 import { useAppStore } from '../../store/appStore'
 import { useNewsStore } from '../../store/newsStore'
 import { useTreeStore } from '../../store/treeStore'
@@ -68,31 +69,31 @@ export default function Homepage() {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setMode('thinking')}
-                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-md border transition-colors ${
                   mode === 'thinking'
                     ? 'bg-brand/10 border-brand/30 text-brand font-medium'
                     : 'border-border text-text-secondary hover:border-brand/30'
                 }`}
               >
-                🧠 AI 思考
+                <Brain className="w-3.5 h-3.5" /> AI 思考
               </button>
               <button
                 onClick={() => setMode('prototype')}
-                className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1 text-xs rounded-md border transition-colors ${
                   mode === 'prototype'
                     ? 'bg-brand/10 border-brand/30 text-brand font-medium'
                     : 'border-border text-text-secondary hover:border-brand/30'
                 }`}
               >
-                🎨 做原型
+                <Palette className="w-3.5 h-3.5" /> 做原型
               </button>
             </div>
             <button
               onClick={handleSubmit}
               disabled={!input.trim()}
-              className="w-7 h-7 flex items-center justify-center text-white bg-brand rounded-lg hover:bg-brand-hover disabled:opacity-30 transition-colors text-xs"
+              className="w-7 h-7 flex items-center justify-center text-white bg-brand rounded-lg hover:bg-brand-hover disabled:opacity-30 transition-colors"
             >
-              ▶
+              <Send className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -107,7 +108,7 @@ export default function Homepage() {
               className="w-full text-left bg-white border border-border rounded-xl p-5 hover:border-brand/30 transition-colors mb-4"
             >
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm">📰</span>
+                <Newspaper className="w-4 h-4 text-text-secondary" />
                 <span className="text-xs font-medium text-text-primary">AI 资讯日报</span>
                 <span className="text-xs text-text-secondary">· 今天</span>
               </div>
@@ -116,8 +117,8 @@ export default function Homepage() {
                   {todaySummary}
                 </ReactMarkdown>
               </div>
-              <div className="mt-3 text-xs text-brand font-medium">
-                阅读完整日报 →
+              <div className="mt-3 text-xs text-brand font-medium flex items-center gap-1">
+                阅读完整日报 <ArrowRight className="w-3 h-3" />
               </div>
             </button>
           ) : (
@@ -137,7 +138,9 @@ export default function Homepage() {
         <div className="w-[280px] shrink-0">
           {todayQuestions && todayQuestions.length > 0 && (
             <div className="sticky top-8">
-              <h2 className="text-sm font-semibold text-text-primary mb-3">💡 今日思考</h2>
+              <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-1.5">
+                <Lightbulb className="w-4 h-4" /> 今日思考
+              </h2>
               <div className="space-y-4">
                 {todayQuestions.map((q, i) => (
                   <div key={i} className="flex gap-2">
