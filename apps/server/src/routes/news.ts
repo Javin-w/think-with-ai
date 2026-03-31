@@ -34,25 +34,33 @@ news.get('/today', async (c) => {
   const summaryMatch = briefing.content.match(/##\s*\**\s*今日摘要\**[^\n]*\n([\s\S]*?)(?=\n##\s|\n---|\Z)/i)
   const summary = summaryMatch ? summaryMatch[1].trim() : null
 
-  // Get or generate daily questions
-  let questions: string[] | null = getDailyQuestions(today) ?? null
-  if (!questions) {
+  // Get or generate daily keywords for AI learning
+  let keywords: string[] | null = getDailyQuestions(today) ?? null
+  if (!keywords) {
     try {
       const model = createModelInstance()
       const { text } = await generateText({
         model,
-        system: '你是一个 AI 行业分析师。根据提供的 AI 日报内容，生成 3 个值得深入思考的问题，涉及行业发展趋势和产品设计方向。每个问题一行，不要编号，不要多余解释。',
+        system: `你是一个 AI 技术编辑。根据提供的 AI 日报内容，提取 5-8 个值得深入学习的技术名词或概念。
+要求：
+- 每行一个，格式为：技术名词|一句话简短解释
+- 优先选择日报中出现的新模型、新技术、新框架、新算法
+- 解释要简洁，不超过 20 字
+- 不要编号，不要多余解释
+示例：
+Qwen3.5-Omni|阿里全模态大模型，支持文本/图像/音频/视频
+ARC-AGI-3|衡量AI通用推理能力的基准测试`,
         prompt: briefing.content.slice(0, 4000),
         abortSignal: AbortSignal.timeout(30000),
       })
-      questions = text.trim().split('\n').filter(Boolean).slice(0, 3)
-      setDailyQuestions(today, questions)
+      keywords = text.trim().split('\n').filter(Boolean).slice(0, 8)
+      setDailyQuestions(today, keywords)
     } catch (e) {
-      console.error('[news] Failed to generate questions:', e instanceof Error ? e.message : e)
+      console.error('[news] Failed to generate keywords:', e instanceof Error ? e.message : e)
     }
   }
 
-  return c.json({ summary, questions, date: today })
+  return c.json({ summary, keywords, date: today })
 })
 
 // GET /:id — get single briefing with content

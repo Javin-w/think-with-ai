@@ -18,7 +18,7 @@ interface NewsStore {
   error: string | null
   isFetching: boolean
   todaySummary: string | null
-  todayQuestions: string[] | null
+  todayKeywords: string[] | null
   fetchBriefings: () => Promise<void>
   fetchBriefing: (id: string) => Promise<void>
   createBriefing: (data: { title: string; content: string; date: string }) => Promise<void>
@@ -34,7 +34,7 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
   isFetching: false,
   error: null,
   todaySummary: null,
-  todayQuestions: null,
+  todayKeywords: null,
 
   fetchBriefings: async () => {
     set({ isLoading: true, error: null })
@@ -96,7 +96,7 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
       const res = await fetch('/api/news/today')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      set({ todaySummary: data.summary, todayQuestions: data.questions })
+      set({ todaySummary: data.summary, todayKeywords: data.keywords })
     } catch {
       // silent fail — homepage modules just won't show
     }
