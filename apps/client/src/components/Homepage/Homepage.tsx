@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { Brain, Palette, Newspaper, Lightbulb, SendHorizontal, ArrowRight } from 'lucide-react'
 import { useAppStore } from '../../store/appStore'
 import { useNewsStore } from '../../store/newsStore'
