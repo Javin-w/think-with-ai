@@ -16,7 +16,7 @@ import BranchSummaryCard from './BranchSummaryCard'
 
 interface BranchConversationPanelProps {
   nodeId: string | null
-  onSend: (message: string) => void
+  onSend: (message: string, images?: string[]) => void
   onBranch: (selectedText: string) => void
   onAnnotate?: (selectedText: string, messageId: string) => void
   onHighlightClick?: (annotationId: string) => void
@@ -258,6 +258,13 @@ export default function BranchConversationPanel({
             return messages.map(msg => (
               msg.role === 'user' ? (
                 <div key={msg.id} className="mb-5">
+                  {msg.images && msg.images.length > 0 && (
+                    <div className="flex gap-2 mb-2">
+                      {msg.images.map((src, i) => (
+                        <img key={i} src={src} alt="" className="max-w-[200px] max-h-[150px] rounded-lg border border-border/50 object-cover" />
+                      ))}
+                    </div>
+                  )}
                   <p className="text-sm font-medium text-brand">Q: {msg.content}</p>
                 </div>
               ) : (

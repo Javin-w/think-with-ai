@@ -91,12 +91,12 @@ function App() {
     navigateTo('thinking-list')
   }
 
-  const handleSend = async (message: string) => {
+  const handleSend = async (message: string, images?: string[]) => {
     if (!currentNodeId) {
       const { rootNode } = await createTree(message)
-      await sendMessage(rootNode.id, message)
+      await sendMessage(rootNode.id, message, images)
     } else {
-      await sendMessage(currentNodeId, message)
+      await sendMessage(currentNodeId, message, images)
     }
   }
 
@@ -182,9 +182,9 @@ function App() {
   return isFullWidth ? (
     <div className="h-screen">{renderView()}</div>
   ) : (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-surface">
       <Sidebar />
-      <main className="flex-1 overflow-hidden">{renderView()}</main>
+      <main className="flex-1 overflow-hidden bg-surface-secondary rounded-tl-2xl">{renderView()}</main>
     </div>
   )
 }

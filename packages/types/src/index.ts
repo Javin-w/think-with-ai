@@ -46,6 +46,7 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  images?: string[];  // base64 data URLs for user-uploaded images
   createdAt: number;
 }
 

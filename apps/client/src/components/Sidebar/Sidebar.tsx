@@ -6,7 +6,7 @@ export default function Sidebar() {
   const { goHome } = useAppStore()
 
   return (
-    <aside className="w-60 h-screen flex flex-col border-r border-border bg-white shrink-0">
+    <aside className="w-60 h-screen flex flex-col bg-surface shrink-0">
       {/* Logo */}
       <div className="px-4 pt-5 pb-3">
         <button onClick={goHome} className="flex items-center gap-2">
@@ -25,13 +25,13 @@ export default function Sidebar() {
       </div>
 
       {/* Divider */}
-      <div className="mx-3 border-t border-border" />
+      <div className="mx-3 border-t border-border/60" />
 
       {/* History */}
       <SidebarHistory />
 
       {/* Bottom user area */}
-      <div className="px-4 py-3 border-t border-border">
+      <div className="px-4 py-3 mt-auto border-t border-border/60">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center text-white text-xs font-medium">
             PM

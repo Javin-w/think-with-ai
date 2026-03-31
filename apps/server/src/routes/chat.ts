@@ -7,19 +7,36 @@ import { createModelInstance } from '../providers'
 const chat = new Hono()
 
 chat.post('/', async (c) => {
-  const body = await c.req.json<StreamRequest>()
-  const { message, context = [], provider, model, mode } = body
+  const body = await c.req.json<StreamRequest & { images?: string[] }>()
+  const { message, context = [], provider, model, mode, images } = body
 
   const aiModelInstance = createModelInstance(provider, model)
 
   // Build messages array: context history + current user message
-  const messages = [
+  const messages: Array<{ role: 'user' | 'assistant'; content: any }> = [
     ...context.map(msg => ({
       role: msg.role as 'user' | 'assistant',
-      content: msg.content,
+      content: msg.images?.length
+        ? [
+            ...msg.images.map((img: string) => ({ type: 'image' as const, image: img })),
+            { type: 'text' as const, text: msg.content },
+          ]
+        : msg.content,
     })),
-    { role: 'user' as const, content: message },
   ]
+
+  // Current user message — may include images
+  if (images && images.length > 0) {
+    messages.push({
+      role: 'user',
+      content: [
+        ...images.map(img => ({ type: 'image' as const, image: img })),
+        { type: 'text' as const, text: message },
+      ],
+    })
+  } else {
+    messages.push({ role: 'user', content: message })
+  }
 
   // Wire abort signal
   const abortController = new AbortController()
@@ -34,9 +51,7 @@ chat.post('/', async (c) => {
       temperature: 0.6,
     })
 
-    // Return SSE stream response
     const response = result.toDataStreamResponse()
-    // Add Content-Encoding: none to prevent proxy compression breaking the stream
     const headers = new Headers(response.headers)
     headers.set('Content-Encoding', 'none')
     headers.set('Access-Control-Allow-Origin', '*')

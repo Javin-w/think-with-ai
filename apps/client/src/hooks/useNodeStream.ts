@@ -9,7 +9,7 @@ export function useNodeStream() {
 
   const { addMessage, updateLastMessage, updateTreeTitle } = useTreeStore()
 
-  const sendMessage = useCallback(async (nodeId: string, userMessage: string) => {
+  const sendMessage = useCallback(async (nodeId: string, userMessage: string, images?: string[]) => {
     setIsStreaming(true)
     setError(null)
 
@@ -18,6 +18,7 @@ export function useNodeStream() {
       id: crypto.randomUUID(),
       role: 'user' as const,
       content: userMessage,
+      images,
       createdAt: Date.now(),
     }
     await addMessage(nodeId, userMsg)
@@ -47,7 +48,7 @@ export function useNodeStream() {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, context }),
+        body: JSON.stringify({ message, context, images }),
         signal: abortControllerRef.current.signal,
       })
 

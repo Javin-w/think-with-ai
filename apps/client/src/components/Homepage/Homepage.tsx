@@ -62,7 +62,7 @@ export default function Homepage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto bg-gradient-to-b from-blue-50/40 to-surface">
+    <div className="h-full overflow-y-auto">
       <div className="max-w-5xl mx-auto px-8 py-10 flex gap-10">
         {/* Main column */}
         <div className="flex-1 min-w-0">
