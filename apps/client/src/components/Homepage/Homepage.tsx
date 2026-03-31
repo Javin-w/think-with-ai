@@ -11,12 +11,16 @@ function getGreeting(): string {
   return '晚上好'
 }
 
-// Truncate summary to ~200 chars for homepage preview
-function truncateSummary(text: string, maxLen = 200): string {
-  if (text.length <= maxLen) return text
-  const cut = text.slice(0, maxLen)
-  const lastPeriod = Math.max(cut.lastIndexOf('。'), cut.lastIndexOf('，'), cut.lastIndexOf('\n'))
-  return (lastPeriod > maxLen * 0.5 ? cut.slice(0, lastPeriod + 1) : cut) + '...'
+// Parse summary text into individual news items
+function parseSummaryItems(text: string): string[] {
+  // Strip code block markers
+  const clean = text.replace(/```/g, '').trim()
+  // Split by Chinese comma, newline, or period followed by space
+  return clean
+    .split(/[，\n]+/)
+    .map((s) => s.trim().replace(/^[、。,.\s]+|[、。,.\s]+$/g, ''))
+    .filter((s) => s.length > 4) // filter noise
+    .slice(0, 8) // max 8 items
 }
 
 export default function Homepage() {
@@ -131,10 +135,15 @@ export default function Homepage() {
               onClick={() => navigateTo('news')}
               className="w-full text-left bg-white border border-border rounded-xl p-5 hover:border-brand/20 hover:shadow-sm transition-all group"
             >
-              <div className="text-xs text-text-secondary leading-relaxed line-clamp-5">
-                {truncateSummary(todaySummary, 250)}
-              </div>
-              <div className="mt-3 text-xs text-brand font-medium flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+              <ul className="space-y-2">
+                {parseSummaryItems(todaySummary).map((item, i) => (
+                  <li key={i} className="flex gap-2 text-xs text-text-secondary leading-relaxed">
+                    <span className="shrink-0 w-1 h-1 rounded-full bg-text-secondary/40 mt-1.5" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 text-xs text-brand font-medium flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
                 阅读完整日报 <ArrowRight className="w-3 h-3" />
               </div>
             </button>
