@@ -17,11 +17,14 @@ interface NewsStore {
   isLoading: boolean
   error: string | null
   isFetching: boolean
+  todaySummary: string | null
+  todayQuestions: string[] | null
   fetchBriefings: () => Promise<void>
   fetchBriefing: (id: string) => Promise<void>
   createBriefing: (data: { title: string; content: string; date: string }) => Promise<void>
   deleteBriefing: (id: string) => Promise<void>
   fetchDaily: (date?: string) => Promise<void>
+  fetchToday: () => Promise<void>
 }
 
 export const useNewsStore = create<NewsStore>((set, get) => ({
@@ -30,6 +33,8 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
   isLoading: false,
   isFetching: false,
   error: null,
+  todaySummary: null,
+  todayQuestions: null,
 
   fetchBriefings: async () => {
     set({ isLoading: true, error: null })
@@ -83,6 +88,17 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
       await get().fetchBriefings()
     } catch (e) {
       set({ error: e instanceof Error ? e.message : '删除简报失败' })
+    }
+  },
+
+  fetchToday: async () => {
+    try {
+      const res = await fetch('/api/news/today')
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      set({ todaySummary: data.summary, todayQuestions: data.questions })
+    } catch {
+      // silent fail — homepage modules just won't show
     }
   },
 

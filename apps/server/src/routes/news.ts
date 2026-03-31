@@ -1,7 +1,9 @@
 import { Hono } from 'hono'
-import { getAllBriefings, getBriefing, createBriefing, updateBriefing, deleteBriefing } from '../news/store'
+import { getAllBriefings, getBriefing, getBriefingByDate, createBriefing, updateBriefing, deleteBriefing, getDailyQuestions, setDailyQuestions } from '../news/store'
 import { fetchDailyReport } from '../news/scraper'
 import { refineBriefing } from '../news/refiner'
+import { generateText } from 'ai'
+import { createModelInstance } from '../providers'
 
 const news = new Hono()
 
@@ -17,6 +19,40 @@ export async function fetchAndSaveDailyReport(date?: string): Promise<void> {
 // GET / — list all briefings (without content)
 news.get('/', (c) => {
   return c.json({ briefings: getAllBriefings() })
+})
+
+// GET /today — today's summary + AI-generated thinking questions
+news.get('/today', async (c) => {
+  const today = new Date().toISOString().slice(0, 10)
+  const briefing = getBriefingByDate(today)
+
+  if (!briefing) {
+    return c.json({ summary: null, questions: null, date: today })
+  }
+
+  // Extract summary: content between "## 今日摘要" and next "##"
+  const summaryMatch = briefing.content.match(/##\s*\**\s*今日摘要\**[^\n]*\n([\s\S]*?)(?=\n##\s|\n---|\Z)/i)
+  const summary = summaryMatch ? summaryMatch[1].trim() : null
+
+  // Get or generate daily questions
+  let questions: string[] | null = getDailyQuestions(today) ?? null
+  if (!questions) {
+    try {
+      const model = createModelInstance()
+      const { text } = await generateText({
+        model,
+        system: '你是一个 AI 行业分析师。根据提供的 AI 日报内容，生成 3 个值得深入思考的问题，涉及行业发展趋势和产品设计方向。每个问题一行，不要编号，不要多余解释。',
+        prompt: briefing.content.slice(0, 4000),
+        abortSignal: AbortSignal.timeout(30000),
+      })
+      questions = text.trim().split('\n').filter(Boolean).slice(0, 3)
+      setDailyQuestions(today, questions)
+    } catch (e) {
+      console.error('[news] Failed to generate questions:', e instanceof Error ? e.message : e)
+    }
+  }
+
+  return c.json({ summary, questions, date: today })
 })
 
 // GET /:id — get single briefing with content

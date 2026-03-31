@@ -39,3 +39,18 @@ export function updateBriefing(id: string, data: Partial<{ title: string; conten
 export function deleteBriefing(id: string): boolean {
   return briefings.delete(id)
 }
+
+export function getBriefingByDate(date: string): Briefing | undefined {
+  return Array.from(briefings.values()).find((b) => b.date === date)
+}
+
+// Daily questions cache
+const dailyQuestions = new Map<string, string[]>()
+
+export function getDailyQuestions(date: string): string[] | undefined {
+  return dailyQuestions.get(date)
+}
+
+export function setDailyQuestions(date: string, questions: string[]): void {
+  dailyQuestions.set(date, questions)
+}
