@@ -56,7 +56,7 @@ export default function NewsModule() {
           <div className="max-w-3xl mx-auto px-8 py-8">
             <h1 className="text-2xl font-bold text-text-primary mb-1">{currentBriefing.title}</h1>
             <div className="text-xs text-text-secondary mb-6">{currentBriefing.date}</div>
-            <article className="prose prose-sm max-w-none text-text-primary">
+            <article className="prose prose-sm max-w-none text-text-primary news-article">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {currentBriefing.content}
               </ReactMarkdown>

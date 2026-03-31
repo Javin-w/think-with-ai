@@ -13,3 +13,11 @@
   --radius-md: 8px;
   --radius-lg: 12px;
 }
+
+/* News article: make first <strong> in list items display as block title */
+.news-article ol > li > strong:first-child,
+.news-article ul > li > strong:first-child {
+  display: block;
+  font-size: 1.05em;
+  margin-bottom: 4px;
+}
