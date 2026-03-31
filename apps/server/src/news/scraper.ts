@@ -51,11 +51,18 @@ export async function fetchDailyReport(date: string): Promise<{ title: string; c
     .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
 
   // Convert HTML to Markdown
-  const markdown = nhm.translate(contentHtml).trim()
+  let markdown = nhm.translate(contentHtml).trim()
 
   if (!markdown) {
     throw new Error('No content extracted from page')
   }
+
+  // Remove the page's own title (e.g. "# AI资讯日报 2026/3/31") and tag blockquote
+  // that duplicates our title and adds noise
+  markdown = markdown
+    .replace(/^#\s*AI资讯日报[^\n]*\n*/i, '')
+    .replace(/^>\s*[""].*?[""]\s*\n*/m, '')
+    .trim()
 
   const title = `AI资讯日报 ${date}`
   console.log(`[scraper] Got ${markdown.length} chars for ${date}`)
