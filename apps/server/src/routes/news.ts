@@ -9,7 +9,7 @@ const news = new Hono()
 export async function fetchAndSaveDailyReport(date?: string): Promise<void> {
   const d = date || new Date().toISOString().slice(0, 10)
   const { title, content: rawContent } = await fetchDailyReport(d)
-  const content = await refineBriefing(rawContent, d)
+  const content = refineBriefing(rawContent)
   createBriefing({ title, content, date: d })
   console.log(`[news] Saved briefing for ${d}`)
 }
