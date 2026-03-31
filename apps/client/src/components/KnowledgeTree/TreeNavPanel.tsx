@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react'
-import { ChevronRight, ChevronLeft } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useTreeStore } from '../../store/treeStore'
 import { buildTreeStructure, getAncestorChain, serializeTreeForExport } from '../../store/treeUtils'
 import TreeNavNode from './TreeNavNode'
@@ -88,25 +88,25 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark }: TreeNavPa
           className="w-5 h-5 flex items-center justify-center text-text-secondary/40 hover:text-text-secondary rounded transition-colors"
           title="展开导航"
         >
-          <ChevronRight size={14} />
+          <PanelLeftOpen size={14} strokeWidth={1.5} />
         </button>
       </div>
     )
   }
 
   return (
-    <div className="w-56 h-full border-r border-border/50 flex flex-col shrink-0">
+    <div className="w-52 h-full border-r border-border/30 flex flex-col shrink-0">
       {/* Header */}
-      <div className="px-3 py-3 flex items-center justify-between">
-        <span className="text-xs text-text-secondary/60 uppercase tracking-wider font-medium">
-          {tree?.title || '知识树'}
+      <div className="px-3 py-2.5 flex items-center justify-between">
+        <span className="text-[11px] text-text-secondary/40 font-medium tracking-wide">
+          知识树
         </span>
         <button
           onClick={() => setCollapsed(true)}
-          className="w-5 h-5 flex items-center justify-center text-text-secondary/30 hover:text-text-secondary rounded transition-colors"
+          className="w-4 h-4 flex items-center justify-center text-text-secondary/20 hover:text-text-secondary/50 rounded transition-colors"
           title="收起导航"
         >
-          <ChevronLeft size={14} />
+          <PanelLeftClose size={14} strokeWidth={1.5} />
         </button>
       </div>
 

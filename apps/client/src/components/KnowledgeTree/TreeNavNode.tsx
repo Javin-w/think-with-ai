@@ -15,7 +15,8 @@ export default function TreeNavNode({ item, currentNodeId, onSelect, depth, defa
   const [expanded, setExpanded] = useState(defaultExpanded ?? false)
   const hasChildren = item.children.length > 0
   const isActive = item.node.id === currentNodeId
-  const label = getNodeLabel(item.node)
+  const isRoot = depth === 0
+  const label = getNodeLabel(item.node, isRoot ? 24 : 28)
 
   useEffect(() => {
     if (defaultExpanded) setExpanded(true)
@@ -25,35 +26,31 @@ export default function TreeNavNode({ item, currentNodeId, onSelect, depth, defa
     <div>
       <div
         className={`
-          flex items-center gap-1.5 py-1 cursor-pointer text-[13px] transition-colors
+          flex items-center gap-1 cursor-pointer transition-colors rounded-md mx-2
+          ${isRoot ? 'py-1.5 text-[12px]' : 'py-[5px] text-[11px]'}
           ${isActive
-            ? 'text-text-primary font-medium'
-            : 'text-text-secondary hover:text-text-primary'
+            ? 'text-text-primary bg-slate-100'
+            : 'text-text-secondary/70 hover:text-text-secondary hover:bg-slate-50'
           }
         `}
-        style={{ paddingLeft: `${depth * 16 + 12}px`, paddingRight: '12px' }}
+        style={{ paddingLeft: `${depth * 14 + 8}px`, paddingRight: '8px' }}
         onClick={() => onSelect(item.node.id)}
       >
-        {/* Expand/collapse — subtle chevron */}
+        {/* Chevron */}
         <button
-          className={`w-4 h-4 flex items-center justify-center shrink-0 transition-transform ${
-            hasChildren ? 'text-text-secondary/40' : 'invisible'
+          className={`w-3.5 h-3.5 flex items-center justify-center shrink-0 transition-transform ${
+            hasChildren ? 'text-text-secondary/30' : 'invisible'
           } ${expanded ? 'rotate-90' : ''}`}
           onClick={(e) => {
             e.stopPropagation()
             if (hasChildren) setExpanded(!expanded)
           }}
         >
-          <ChevronRight size={12} />
+          <ChevronRight size={10} strokeWidth={1.5} />
         </button>
 
-        {/* Active dot */}
-        {isActive && (
-          <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
-        )}
-
         {/* Label */}
-        <span className="truncate flex-1">{label}</span>
+        <span className={`truncate flex-1 ${isActive ? 'font-medium' : ''}`}>{label}</span>
       </div>
 
       {/* Children */}

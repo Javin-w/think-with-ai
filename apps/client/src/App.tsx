@@ -10,7 +10,6 @@ import { useAppStore } from './store/appStore'
 import { useNodeStream } from './hooks/useNodeStream'
 import PrototypeModule from './components/Prototype/PrototypeModule'
 import NewsModule from './components/News/NewsModule'
-import NewsAdmin from './components/News/NewsAdmin'
 
 function App() {
   const {
@@ -134,9 +133,6 @@ function App() {
 
       case 'news':
         return <NewsModule />
-
-      case 'news-admin':
-        return <NewsAdmin />
 
       case 'prototype':
         return <PrototypeModule />

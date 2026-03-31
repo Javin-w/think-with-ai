@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type AppView = 'home' | 'news' | 'news-admin' | 'prototype' | 'thinking-list' | 'thinking-tree'
+export type AppView = 'home' | 'news' | 'prototype' | 'thinking-list' | 'thinking-tree'
 
 interface AppStore {
   currentView: AppView

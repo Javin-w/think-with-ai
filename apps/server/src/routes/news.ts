@@ -5,6 +5,15 @@ import { refineBriefing } from '../news/refiner'
 
 const news = new Hono()
 
+/** Fetch, refine, and save daily report. Exported for scheduler use. */
+export async function fetchAndSaveDailyReport(date?: string): Promise<void> {
+  const d = date || new Date().toISOString().slice(0, 10)
+  const { title, content: rawContent } = await fetchDailyReport(d)
+  const content = await refineBriefing(rawContent, d)
+  createBriefing({ title, content, date: d })
+  console.log(`[news] Saved briefing for ${d}`)
+}
+
 // GET / — list all briefings (without content)
 news.get('/', (c) => {
   return c.json({ briefings: getAllBriefings() })
@@ -27,16 +36,12 @@ news.post('/', async (c) => {
   return c.json(briefing, 201)
 })
 
-// POST /fetch-daily — scrape ai.hubtoday.app for a specific date
+// POST /fetch-daily — manual sync trigger
 news.post('/fetch-daily', async (c) => {
   const body = await c.req.json<{ date?: string }>().catch(() => ({}))
-  const date = (body as any).date || new Date().toISOString().slice(0, 10)
-
   try {
-    const { title, content: rawContent } = await fetchDailyReport(date)
-    const content = await refineBriefing(rawContent, date)
-    const briefing = createBriefing({ title, content, date })
-    return c.json(briefing, 201)
+    await fetchAndSaveDailyReport((body as any).date)
+    return c.json({ ok: true, briefings: getAllBriefings() }, 201)
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Scrape failed'
     console.error('[news] Scrape failed:', msg)

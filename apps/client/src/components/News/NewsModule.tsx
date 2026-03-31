@@ -2,11 +2,9 @@ import { useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useNewsStore } from '../../store/newsStore'
-import { useAppStore } from '../../store/appStore'
 
 export default function NewsModule() {
   const { briefings, currentBriefing, isLoading, isFetching, fetchBriefings, fetchBriefing, fetchDaily } = useNewsStore()
-  const { navigateTo } = useAppStore()
 
   useEffect(() => {
     fetchBriefings()
@@ -19,10 +17,11 @@ export default function NewsModule() {
         <div className="p-4 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-text-primary">AI 简报</h2>
           <button
-            onClick={() => navigateTo('news-admin')}
-            className="text-xs text-[#4CAF50] hover:underline"
+            onClick={() => fetchDaily()}
+            disabled={isFetching}
+            className="text-xs text-[#4CAF50] hover:underline disabled:opacity-50"
           >
-            管理
+            {isFetching ? '同步中...' : '同步'}
           </button>
         </div>
         {briefings.length === 0 && !isLoading ? (

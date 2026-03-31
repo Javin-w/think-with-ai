@@ -14,7 +14,7 @@ export default function SidebarNav() {
       return currentView === 'thinking-list' || currentView === 'thinking-tree'
     }
     if (view === 'news') {
-      return currentView === 'news' || currentView === 'news-admin'
+      return currentView === 'news'
     }
     return currentView === view
   }

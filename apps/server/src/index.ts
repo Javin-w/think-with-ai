@@ -3,6 +3,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import chat from './routes/chat'
 import news from './routes/news'
+import { fetchAndSaveDailyReport } from './routes/news'
+import { startDailyScheduler } from './news/scheduler'
 import agent from './routes/agent'
 import exportRoute from './routes/export'
 
@@ -23,3 +25,6 @@ const port = Number(process.env.PORT) || 3000
 console.log(`Server running on http://localhost:${port}`)
 
 serve({ fetch: app.fetch, port })
+
+// Start daily news scheduler (11:00 AM)
+startDailyScheduler(() => fetchAndSaveDailyReport())
