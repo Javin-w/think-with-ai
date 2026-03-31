@@ -1,9 +1,5 @@
-/**
- * SidebarHistory — recent sessions in the sidebar
- * Reuses data loading logic from the old RecentList component
- */
-
 import { useEffect, useState } from 'react'
+import { MessageSquare, Code } from 'lucide-react'
 import { db } from '../../db'
 import { useAppStore } from '../../store/appStore'
 import { useTreeStore } from '../../store/treeStore'
@@ -13,24 +9,6 @@ interface HistoryItem {
   title: string
   type: 'thinking' | 'prototype'
   updatedAt: number
-}
-
-const TYPE_ICONS: Record<HistoryItem['type'], string> = {
-  thinking: '🧠',
-  prototype: '🎨',
-}
-
-function relativeTime(timestamp: number): string {
-  const diff = Date.now() - timestamp
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}小时前`
-  const days = Math.floor(hours / 24)
-  if (days === 1) return '昨天'
-  if (days < 30) return `${days}天前`
-  return new Date(timestamp).toLocaleDateString('zh-CN')
 }
 
 export default function SidebarHistory() {
@@ -45,7 +23,7 @@ export default function SidebarHistory() {
       for (const t of trees) {
         merged.push({
           id: t.id,
-          title: t.title || '未命名思考',
+          title: t.title || '未命名',
           type: 'thinking',
           updatedAt: t.updatedAt,
         })
@@ -59,7 +37,7 @@ export default function SidebarHistory() {
       for (const s of sessions.slice(0, 8)) {
         merged.push({
           id: s.id,
-          title: s.title || '未命名原型',
+          title: s.title || '未命名',
           type: 'prototype',
           updatedAt: s.updatedAt,
         })
@@ -84,31 +62,28 @@ export default function SidebarHistory() {
     }
   }
 
+  if (items.length === 0) return null
+
   return (
-    <div className="flex-1 overflow-y-auto">
-      {items.length === 0 ? (
-        <div className="px-3 py-4 text-xs text-text-secondary/40 text-center">
-          暂无记录
-        </div>
-      ) : (
-        <>
-          <div className="px-3 py-2 text-xs font-medium text-text-secondary uppercase tracking-wider">
-            最近
-          </div>
-          <div className="space-y-0.5">
-            {items.map((item) => (
-              <button
-                key={`${item.type}-${item.id}`}
-                onClick={() => handleClick(item)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-text-secondary hover:bg-gray-100 hover:text-text-primary transition-colors text-left"
-              >
-                <span className="shrink-0">{TYPE_ICONS[item.type]}</span>
-                <span className="truncate flex-1">{item.title}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
+    <div className="flex-1 overflow-y-auto px-3 mt-4">
+      <div className="px-2 pb-2 text-[11px] font-medium text-text-primary/35 uppercase tracking-wider">
+        最近
+      </div>
+      <div className="space-y-px">
+        {items.map((item) => (
+          <button
+            key={`${item.type}-${item.id}`}
+            onClick={() => handleClick(item)}
+            className="w-full flex items-center gap-2 px-2 py-[6px] rounded-md text-[12px] text-text-primary/50 hover:bg-black/[0.04] hover:text-text-primary transition-colors text-left"
+          >
+            {item.type === 'thinking'
+              ? <MessageSquare className="w-3.5 h-3.5 shrink-0" />
+              : <Code className="w-3.5 h-3.5 shrink-0" />
+            }
+            <span className="truncate">{item.title}</span>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

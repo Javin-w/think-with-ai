@@ -27,10 +27,10 @@ export default function SidebarNav() {
     <button
       key={item.view}
       onClick={() => navigateTo(item.view)}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+      className={`w-full flex items-center gap-2.5 px-2 py-[7px] rounded-md text-[13px] transition-colors ${
         isActive(item.view)
-          ? 'bg-brand/10 text-brand font-medium'
-          : 'text-text-secondary hover:bg-gray-100 hover:text-text-primary'
+          ? 'bg-brand/8 text-brand font-medium'
+          : 'text-text-primary/60 hover:bg-black/[0.04] hover:text-text-primary'
       }`}
     >
       {item.icon}
@@ -43,7 +43,7 @@ export default function SidebarNav() {
       <div className="space-y-0.5">
         {TOOLS.map(renderItem)}
       </div>
-      <div className="my-2 mx-1 border-t border-border/50" />
+      <div className="my-3" />
       <div className="space-y-0.5">
         {INFO.map(renderItem)}
       </div>

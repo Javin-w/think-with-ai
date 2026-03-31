@@ -6,37 +6,32 @@ export default function Sidebar() {
   const { goHome } = useAppStore()
 
   return (
-    <aside className="w-60 h-screen flex flex-col bg-surface shrink-0">
+    <aside className="w-56 h-screen flex flex-col bg-surface shrink-0 py-4">
       {/* Logo */}
-      <div className="px-4 pt-5 pb-3">
-        <button onClick={goHome} className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-brand rounded-lg flex items-center justify-center text-white font-bold text-sm">
-            N
-          </div>
-          <div>
-            <span className="font-semibold text-text-primary text-sm">NewmanAI</span>
-          </div>
-        </button>
-      </div>
+      <button onClick={goHome} className="flex items-center gap-2.5 px-5 mb-5">
+        <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center text-white font-bold text-xs">
+          N
+        </div>
+        <span className="font-semibold text-text-primary text-[13px]">NewmanAI</span>
+      </button>
 
       {/* Navigation */}
-      <div className="px-3 pb-3">
+      <div className="px-3">
         <SidebarNav />
       </div>
-
-      {/* Divider */}
-      <div className="mx-3 border-t border-border/60" />
 
       {/* History */}
       <SidebarHistory />
 
       {/* Bottom user area */}
-      <div className="px-4 py-3 mt-auto border-t border-border/60">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center text-white text-xs font-medium">
-            PM
+      <div className="px-3 pt-2 mt-auto">
+        <div className="border-t border-border/40 pt-3 px-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 bg-brand/15 text-brand rounded-full flex items-center justify-center text-[10px] font-semibold">
+              PM
+            </div>
+            <span className="text-xs text-text-primary/70">Product Manager</span>
           </div>
-          <span className="text-xs text-text-secondary">Product Manager</span>
         </div>
       </div>
     </aside>
