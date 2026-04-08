@@ -1,43 +1,27 @@
 /**
- * Agent Session Store
- *
- * Manages prototype agent sessions with plan, HTML state, and step history.
- * Built on the same Dexie persistence as chatSessionStore.
+ * Agent Session Store — simplified for ReAct style prototype agent
  */
 
 import { create } from 'zustand'
 import type {
   ChatMessage,
   ChatSession,
-  PrototypePlan,
-  AgentStep,
   AgentSessionState as PersistedAgentState,
 } from '@repo/types'
 import { db } from '../db/index'
 
 interface AgentStoreState {
-  // Session management
   sessions: ChatSession[]
   currentSessionId: string | null
-
-  // Chat messages (user + assistant summaries)
   messages: ChatMessage[]
-
-  // Agent state
-  plan: PrototypePlan | null
   currentHtml: string
-  steps: AgentStep[]
   isRunning: boolean
 
-  // Actions
   loadSessions: () => Promise<void>
   createSession: (title: string) => Promise<ChatSession>
   selectSession: (id: string) => Promise<void>
   addMessage: (msg: ChatMessage) => void
-  setPlan: (plan: PrototypePlan | null) => void
   setCurrentHtml: (html: string) => void
-  setSteps: (steps: AgentStep[]) => void
-  addStep: (step: AgentStep) => void
   setIsRunning: (value: boolean) => void
   saveSession: () => Promise<void>
   resetCurrent: () => void
@@ -47,9 +31,7 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
   sessions: [],
   currentSessionId: null,
   messages: [],
-  plan: null,
   currentHtml: '',
-  steps: [],
   isRunning: false,
 
   loadSessions: async () => {
@@ -76,9 +58,7 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
       sessions: [session, ...state.sessions],
       currentSessionId: session.id,
       messages: [],
-      plan: null,
       currentHtml: '',
-      steps: [],
     }))
     return session
   },
@@ -91,8 +71,6 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
       currentSessionId: session.id,
       messages: session.messages,
       currentHtml: persisted?.currentHtml ?? session.output ?? '',
-      plan: persisted?.plan ?? null,
-      steps: [],
     })
   },
 
@@ -100,17 +78,13 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
     set((state) => ({ messages: [...state.messages, msg] }))
   },
 
-  setPlan: (plan: PrototypePlan | null) => set({ plan }),
   setCurrentHtml: (html: string) => set({ currentHtml: html }),
-  setSteps: (steps: AgentStep[]) => set({ steps }),
-  addStep: (step: AgentStep) => set((state) => ({ steps: [...state.steps, step] })),
   setIsRunning: (value: boolean) => set({ isRunning: value }),
 
   saveSession: async () => {
-    const { currentSessionId, messages, currentHtml, plan } = get()
+    const { currentSessionId, messages, currentHtml } = get()
     if (!currentSessionId) return
     const agentState: PersistedAgentState = {
-      plan,
       currentHtml,
       requirementSummary: '',
       htmlSnapshots: [],
@@ -134,9 +108,7 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
     set({
       currentSessionId: null,
       messages: [],
-      plan: null,
       currentHtml: '',
-      steps: [],
     })
   },
 }))

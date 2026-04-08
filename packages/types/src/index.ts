@@ -74,7 +74,6 @@ export interface ChatSession {
  * Persisted agent state for session recovery
  */
 export interface AgentSessionState {
-  plan: PrototypePlan | null;
   currentHtml: string;
   requirementSummary: string;
   htmlSnapshots: Array<{ html: string; summary: string; timestamp: number }>;
@@ -143,7 +142,6 @@ export interface AgentStepEvent {
   tool: string;
   summary: string;
   html?: string;
-  plan?: PrototypePlan;
 }
 
 export interface AgentClarifyEvent {
@@ -187,7 +185,6 @@ export interface AgentRunRequest {
   provider?: string;
   model?: string;
   existingState?: {
-    plan: PrototypePlan | null;
     currentHtml: string;
     htmlSnapshots: Array<{ html: string; summary: string; timestamp: number }>;
     requirementSummary: string;

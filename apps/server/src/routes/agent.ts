@@ -24,15 +24,20 @@ agent.post('/run', async (c) => {
     existingMessages,
   } = body
 
+  console.log(`[agent:route] POST /run module=${moduleName} message="${(message || '').slice(0, 80)}" provider=${provider} model=${model}`)
+
   if (!message || typeof message !== 'string') {
+    console.log('[agent:route] ERROR: message is required')
     return c.json({ error: 'message is required' }, 400)
   }
 
   const config = AGENT_MODULES[moduleName]
   if (!config) {
+    console.log(`[agent:route] ERROR: unknown module "${moduleName}"`)
     return c.json({ error: `Unknown agent module: ${moduleName}` }, 400)
   }
 
+  console.log(`[agent:route] starting agent stream...`)
   const stream = runAgent(config, {
     message,
     sessionId: sessionId ?? crypto.randomUUID(),

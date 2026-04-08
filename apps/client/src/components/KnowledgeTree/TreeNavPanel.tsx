@@ -1,8 +1,10 @@
 import { useMemo, useState, useCallback } from 'react'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, List, GitFork } from 'lucide-react'
+import { useAppStore } from '../../store/appStore'
 import { useTreeStore } from '../../store/treeStore'
 import { buildTreeStructure, getAncestorChain, serializeTreeForExport } from '../../store/treeUtils'
 import TreeNavNode from './TreeNavNode'
+import TreeMapView from './TreeMapView'
 
 interface TreeNavPanelProps {
   treeId: string | null
@@ -12,9 +14,21 @@ interface TreeNavPanelProps {
 
 export default function TreeNavPanel({ treeId, onBack, onExportLark }: TreeNavPanelProps) {
   const { nodes, currentNodeId, setCurrentNode, trees } = useTreeStore()
+  const { goHome } = useAppStore()
   const [collapsed, setCollapsed] = useState(false)
+  const [viewMode, setViewMode] = useState<'list' | 'map'>(() => {
+    return (localStorage.getItem('treeNavViewMode') as 'list' | 'map') || 'list'
+  })
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState<string | null>(null)
+
+  const toggleViewMode = useCallback(() => {
+    setViewMode(prev => {
+      const next = prev === 'list' ? 'map' : 'list'
+      localStorage.setItem('treeNavViewMode', next)
+      return next
+    })
+  }, [])
 
   const currentTreeNodes = useMemo(
     () => nodes.filter(n => n.treeId === treeId),
@@ -94,39 +108,68 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark }: TreeNavPa
     )
   }
 
+  const isMapMode = viewMode === 'map'
+
   return (
-    <div className="w-52 h-full border-r border-border/30 flex flex-col shrink-0">
+    <div className={`${isMapMode ? 'w-80' : 'w-52'} h-full border-r border-border/30 flex flex-col shrink-0 transition-all duration-300`}>
       {/* Header */}
       <div className="px-3 py-2.5 flex items-center justify-between">
-        <span className="text-[11px] text-text-secondary/40 font-medium tracking-wide">
-          知识树
-        </span>
-        <button
-          onClick={() => setCollapsed(true)}
-          className="w-4 h-4 flex items-center justify-center text-text-secondary/20 hover:text-text-secondary/50 rounded transition-colors"
-          title="收起导航"
-        >
-          <PanelLeftClose size={14} strokeWidth={1.5} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={goHome}
+            className="w-5 h-5 bg-brand rounded flex items-center justify-center text-white font-bold text-[9px] hover:bg-brand-hover transition-colors shrink-0"
+            title="回到主页"
+          >
+            N
+          </button>
+          <div className="w-px h-3.5 bg-border/50" />
+          <span className="text-[11px] text-text-secondary/40 font-medium tracking-wide">
+            知识树
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {currentTreeNodes.length > 0 && (
+            <button
+              onClick={toggleViewMode}
+              className="w-5 h-5 flex items-center justify-center text-text-secondary/30 hover:text-text-secondary/60 rounded transition-colors"
+              title={isMapMode ? '切换列表' : '切换图谱'}
+            >
+              {isMapMode ? <List size={13} strokeWidth={1.5} /> : <GitFork size={13} strokeWidth={1.5} />}
+            </button>
+          )}
+          <button
+            onClick={() => setCollapsed(true)}
+            className="w-5 h-5 flex items-center justify-center text-text-secondary/20 hover:text-text-secondary/50 rounded transition-colors"
+            title="收起导航"
+          >
+            <PanelLeftClose size={14} strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
 
-      {/* Tree */}
-      <div className="flex-1 overflow-y-auto py-1">
-        {treeStructure.length === 0 ? (
-          <div className="px-3 py-6 text-xs text-text-secondary/40 text-center">
-            开始对话后显示
-          </div>
+      {/* Content */}
+      <div className="flex-1 overflow-hidden">
+        {isMapMode ? (
+          <TreeMapView treeId={treeId} />
         ) : (
-          treeStructure.map(item => (
-            <TreeNavNode
-              key={item.node.id}
-              item={item}
-              currentNodeId={currentNodeId}
-              onSelect={setCurrentNode}
-              depth={0}
-              defaultExpanded={expandedPathIds.has(item.node.id)}
-            />
-          ))
+          <div className="h-full overflow-y-auto py-1">
+            {treeStructure.length === 0 ? (
+              <div className="px-3 py-6 text-xs text-text-secondary/40 text-center">
+                开始对话后显示
+              </div>
+            ) : (
+              treeStructure.map(item => (
+                <TreeNavNode
+                  key={item.node.id}
+                  item={item}
+                  currentNodeId={currentNodeId}
+                  onSelect={setCurrentNode}
+                  depth={0}
+                  defaultExpanded={expandedPathIds.has(item.node.id)}
+                />
+              ))
+            )}
+          </div>
         )}
       </div>
 

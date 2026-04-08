@@ -222,7 +222,7 @@ pnpm build        # 先构建 types 包，再构建前端 → apps/client/dist/
 Claude Code 的工作流：
 1. 阅读相关代码
 2. 实现自动聚焦
-3. 调用 boss agent：goal="实现消息输入框自动聚焦，进入对话页面时输入框自动获得焦点"
+3. 如果改动量较大，调用 boss agent 进行验收
 4. boss 返回 ✅ → 告知用户完成
    boss 返回 ❌ → 修复问题 → 再次调用 boss → 直到 ✅
 ```

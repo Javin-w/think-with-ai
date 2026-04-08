@@ -207,20 +207,88 @@ export default function BranchConversationPanel({
     }))
   }, [nodeId, nodes])
 
+  const userScrolledUpRef = useRef(false)
+
+  // Track if user scrolled up manually
   useEffect(() => {
-    if (scrollRef.current) {
+    const el = scrollRef.current
+    if (!el) return
+    const handleScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+      userScrolledUpRef.current = distanceFromBottom > 80
+    }
+    el.addEventListener('scroll', handleScroll)
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Auto-scroll only if user hasn't scrolled up
+  useEffect(() => {
+    if (scrollRef.current && !userScrolledUpRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
 
+  // Reset scroll lock when switching nodes or when streaming starts
+  useEffect(() => {
+    userScrolledUpRef.current = false
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [nodeId])
+
   // Empty state
   if (!nodeId) {
+    const starterTopics = [
+      '什么是量子计算？它有哪些实际应用？',
+      'TCP 三次握手的原理是什么？',
+      '经济学中的供需关系如何影响价格？',
+    ]
+
     return (
       <div className="flex flex-col h-full flex-1">
         <div className="flex-1 flex flex-col items-center justify-center px-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-text-primary mb-3 tracking-tight">NewmanAI 知识树</h2>
-            <p className="text-text-secondary leading-relaxed">开始一个话题，探索你的知识</p>
+          <div className="text-center mb-10 max-w-md">
+            {/* Tree branch illustration */}
+            <div className="mb-6 flex justify-center">
+              <svg width="200" height="100" viewBox="0 0 200 100" fill="none" className="text-brand">
+                {/* Root node */}
+                <rect x="10" y="38" width="56" height="24" rx="6" fill="currentColor" opacity="0.12" stroke="currentColor" strokeWidth="1.5" />
+                <text x="38" y="54" textAnchor="middle" fill="currentColor" fontSize="10" fontWeight="500">提问</text>
+                {/* Edges */}
+                <path d="M66 50 L90 30" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+                <path d="M66 50 L90 50" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+                <path d="M66 50 L90 70" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+                {/* Branch nodes */}
+                <rect x="90" y="18" width="56" height="24" rx="6" fill="currentColor" opacity="0.08" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 2" />
+                <text x="118" y="34" textAnchor="middle" fill="currentColor" fontSize="9" opacity="0.7">概念 A</text>
+                <rect x="90" y="38" width="56" height="24" rx="6" fill="currentColor" opacity="0.08" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 2" />
+                <text x="118" y="54" textAnchor="middle" fill="currentColor" fontSize="9" opacity="0.7">概念 B</text>
+                <rect x="90" y="58" width="56" height="24" rx="6" fill="currentColor" opacity="0.08" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 2" />
+                <text x="118" y="74" textAnchor="middle" fill="currentColor" fontSize="9" opacity="0.7">概念 C</text>
+                {/* Deep branch */}
+                <path d="M146 30 L164 22" stroke="currentColor" strokeWidth="1.2" opacity="0.2" />
+                <rect x="164" y="10" width="32" height="20" rx="5" fill="currentColor" opacity="0.05" stroke="currentColor" strokeWidth="1" strokeDasharray="2 2" />
+                <text x="180" y="23" textAnchor="middle" fill="currentColor" fontSize="8" opacity="0.4">...</text>
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-text-primary mb-2 tracking-tight">开始构建你的知识树</h2>
+            <p className="text-sm text-text-secondary leading-relaxed">
+              提出一个问题，<span className="text-brand font-medium">选中回答中感兴趣的概念</span>，一键展开为新分支
+            </p>
+          </div>
+
+          {/* Starter topics */}
+          <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+            {starterTopics.map((topic) => (
+              <button
+                key={topic}
+                onClick={() => onSend(topic)}
+                disabled={isStreaming}
+                className="px-3.5 py-2 text-xs text-text-secondary bg-surface border border-border/50 rounded-full hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-50"
+              >
+                {topic}
+              </button>
+            ))}
           </div>
         </div>
         <div className="max-w-2xl mx-auto w-full">

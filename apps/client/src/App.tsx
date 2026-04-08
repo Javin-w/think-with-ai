@@ -8,7 +8,9 @@ import AnnotationsPanel from './components/KnowledgeTree/AnnotationsPanel'
 import { useTreeStore } from './store/treeStore'
 import { useAppStore } from './store/appStore'
 import { useNodeStream } from './hooks/useNodeStream'
+import { useOnboarding } from './hooks/useOnboarding'
 import PrototypeModule from './components/Prototype/PrototypeModule'
+import PrototypeList from './components/Prototype/PrototypeList'
 import NewsModule from './components/News/NewsModule'
 
 function App() {
@@ -25,6 +27,13 @@ function App() {
   const { currentView, navigateTo } = useAppStore()
   const { sendMessage, isStreaming } = useNodeStream()
   const inputAutoFocusRef = useRef(false)
+  const {
+    showBranchTip,
+    triggerBranchTip,
+    dismissBranchTip,
+    showBranchCelebration,
+    triggerFirstBranchCelebration,
+  } = useOnboarding()
 
   // Pending annotation state (lifted here to coordinate popup → panel)
   const [pendingAnnotation, setPendingAnnotation] = useState<{ selectedText: string; messageId: string } | null>(null)
@@ -36,6 +45,19 @@ function App() {
       loadTrees()
     }
   }, [currentView, loadTrees])
+
+  // Trigger branch tip after first AI reply on root node
+  const prevStreamingRef = useRef(false)
+  useEffect(() => {
+    if (prevStreamingRef.current && !isStreaming && currentNodeId) {
+      const state = useTreeStore.getState()
+      const node = state.nodes.find(n => n.id === currentNodeId)
+      if (node && node.parentId === null && node.messages.length === 2) {
+        triggerBranchTip()
+      }
+    }
+    prevStreamingRef.current = isStreaming
+  }, [isStreaming, currentNodeId, triggerBranchTip])
 
   // Clear pending annotation when node changes
   useEffect(() => {
@@ -71,6 +93,17 @@ function App() {
     }
   }
 
+  // Consume pendingMessage from Homepage
+  useEffect(() => {
+    if (currentView === 'thinking-tree') {
+      const pending = sessionStorage.getItem('pendingMessage')
+      if (pending) {
+        sessionStorage.removeItem('pendingMessage')
+        handleSend(pending)
+      }
+    }
+  }, [currentView])
+
   const handleSelectTree = async (treeId: string) => {
     await loadTree(treeId)
     const state = useTreeStore.getState()
@@ -88,7 +121,7 @@ function App() {
   }
 
   const handleBackToList = () => {
-    navigateTo('thinking-list')
+    useAppStore.getState().goBack()
   }
 
   const handleSend = async (message: string, images?: string[]) => {
@@ -102,7 +135,9 @@ function App() {
 
   const handleBranch = async (selectedText: string) => {
     if (!currentNodeId || isStreaming) return
+    dismissBranchTip()
     await createNode(currentNodeId, selectedText)
+    triggerFirstBranchCelebration()
   }
 
   const handleAnnotate = (selectedText: string, messageId: string) => {
@@ -134,6 +169,9 @@ function App() {
       case 'news':
         return <NewsModule />
 
+      case 'prototype-list':
+        return <PrototypeList />
+
       case 'prototype':
         return <PrototypeModule />
 
@@ -148,7 +186,7 @@ function App() {
 
       case 'thinking-tree':
         return (
-          <div className="flex h-screen">
+          <div className="flex h-screen relative">
             <TreeNavPanel treeId={currentTreeId} onBack={handleBackToList} onExportLark={handleExportLark} />
             <BranchConversationPanel
               nodeId={currentNodeId}
@@ -168,6 +206,25 @@ function App() {
               collapsed={annotationsPanelCollapsed}
               onCollapsedChange={setAnnotationsPanelCollapsed}
             />
+
+            {/* Onboarding: branch tip tooltip */}
+            {showBranchTip && (
+              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+                <div className="bg-text-primary text-white text-sm px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-3 whitespace-nowrap">
+                  <span>试试选中上方回答中感兴趣的文字，展开新的知识分支</span>
+                  <button onClick={dismissBranchTip} className="text-white/50 hover:text-white shrink-0 text-xs">✕</button>
+                </div>
+              </div>
+            )}
+
+            {/* Onboarding: first branch celebration */}
+            {showBranchCelebration && (
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
+                <div className="bg-brand text-white text-sm px-5 py-2.5 rounded-xl shadow-lg">
+                  你创建了第一个知识分支！继续探索，构建你的知识树
+                </div>
+              </div>
+            )}
           </div>
         )
 
@@ -176,8 +233,8 @@ function App() {
     }
   }
 
-  // thinking-tree uses full width without sidebar
-  const isFullWidth = currentView === 'thinking-tree'
+  // thinking-tree and prototype use full width without sidebar
+  const isFullWidth = currentView === 'thinking-tree' || currentView === 'prototype'
 
   return isFullWidth ? (
     <div className="h-screen">{renderView()}</div>

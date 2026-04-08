@@ -11,6 +11,12 @@ interface BriefingFull extends BriefingSummary {
   content: string
 }
 
+export interface CategoryHeadline {
+  category: string
+  title: string
+  items?: string[]
+}
+
 interface NewsStore {
   briefings: BriefingSummary[]
   currentBriefing: BriefingFull | null
@@ -19,6 +25,7 @@ interface NewsStore {
   isFetching: boolean
   todaySummary: string | null
   todayKeywords: string[] | null
+  todayCategoryHeadlines: CategoryHeadline[] | null
   fetchBriefings: () => Promise<void>
   fetchBriefing: (id: string) => Promise<void>
   createBriefing: (data: { title: string; content: string; date: string }) => Promise<void>
@@ -35,6 +42,7 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
   error: null,
   todaySummary: null,
   todayKeywords: null,
+  todayCategoryHeadlines: null,
 
   fetchBriefings: async () => {
     set({ isLoading: true, error: null })
@@ -96,7 +104,7 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
       const res = await fetch('/api/news/today')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      set({ todaySummary: data.summary, todayKeywords: data.keywords })
+      set({ todaySummary: data.summary, todayKeywords: data.keywords, todayCategoryHeadlines: data.categoryHeadlines || null })
     } catch {
       // silent fail — homepage modules just won't show
     }

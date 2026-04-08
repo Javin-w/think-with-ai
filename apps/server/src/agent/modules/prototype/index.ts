@@ -14,7 +14,6 @@ export const prototypeAgentConfig: AgentModuleConfig<PrototypeModuleState> = {
   maxSteps: 15,
 
   createInitialState: (existing) => ({
-    plan: existing?.plan ?? null,
     currentHtml: existing?.currentHtml ?? '',
     htmlSnapshots: existing?.htmlSnapshots ?? [],
     requirementSummary: existing?.requirementSummary ?? '',

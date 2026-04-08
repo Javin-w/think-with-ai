@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react'
-import { BookOpen, Palette, Brain } from 'lucide-react'
+import { BookOpen, Palette } from 'lucide-react'
 import { useAppStore, type AppView } from '../../store/appStore'
 
 interface NavItem { icon: ReactNode; label: string; view: AppView }
 
 const TOOLS: NavItem[] = [
-  { icon: <Brain className="w-4 h-4" />, label: 'AI 学习', view: 'thinking-list' },
-  { icon: <Palette className="w-4 h-4" />, label: 'AI 原型', view: 'prototype' },
+  { icon: <span className="material-symbols-outlined" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>account_tree</span>, label: '知识树', view: 'thinking-list' },
+  { icon: <Palette className="w-4 h-4" />, label: 'AI 原型', view: 'prototype-list' },
 ]
 
 const INFO: NavItem[] = [
@@ -19,6 +19,9 @@ export default function SidebarNav() {
   const isActive = (view: AppView) => {
     if (view === 'thinking-list') {
       return currentView === 'thinking-list' || currentView === 'thinking-tree'
+    }
+    if (view === 'prototype-list') {
+      return currentView === 'prototype-list' || currentView === 'prototype'
     }
     return currentView === view
   }

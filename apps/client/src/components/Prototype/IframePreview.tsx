@@ -84,17 +84,30 @@ function IframePreviewInner({ htmlContent, onQuickEdit }: IframePreviewProps, re
 
   if (!htmlContent) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-text-secondary">
-        <span className="text-4xl mb-3">🖥️</span>
-        <span className="text-sm">描述你的需求，Agent 将生成可运行的 HTML 原型</span>
+      <div className="w-full h-full bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center text-center space-y-6 overflow-hidden border border-gray-200/30 relative">
+        {/* Monitor icon */}
+        <div className="relative w-48 h-32 flex flex-col items-center justify-center">
+          <div className="w-40 h-28 border-2 border-gray-200 rounded-xl flex items-center justify-center bg-gray-50/50">
+            <span className="material-symbols-outlined text-gray-200 text-4xl">desktop_windows</span>
+          </div>
+          <div className="absolute -bottom-3 w-12 h-1 bg-gray-200 rounded-full" />
+        </div>
+        <div className="max-w-xs">
+          <h3 className="text-text-primary font-semibold text-lg">你的原型将在这里渲染</h3>
+          <p className="text-text-secondary text-sm mt-2">与左侧助手对话，开始生成代码</p>
+        </div>
+        {/* Decorative gradient */}
+        <div className="absolute bottom-12 right-12 opacity-20 pointer-events-none">
+          <div className="w-64 h-64 bg-gradient-to-tr from-blue-500/20 to-purple-500/20 rounded-full blur-[100px]" />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-200/30 overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-surface">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-white">
         {/* Viewport presets */}
         <div className="flex items-center gap-1 mr-2">
           {VIEWPORT_PRESETS.map((preset) => (

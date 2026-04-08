@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import type { ChatMessage } from '@repo/types'
 import { useAgentStore } from '../../store/agentStore'
 import { useAgentStream } from '../../hooks/useAgentStream'
+import { useAppStore } from '../../store/appStore'
 import ChatPreviewLayout from '../ChatPreview/ChatPreviewLayout'
 import IframePreview, { type IframePreviewHandle } from './IframePreview'
 import AgentChatPanel from './AgentChatPanel'
@@ -11,14 +12,10 @@ export default function PrototypeModule() {
     currentSessionId,
     messages,
     currentHtml,
-    plan,
-    steps,
     isRunning,
     createSession,
     addMessage,
     setCurrentHtml,
-    setPlan,
-    setSteps,
     setIsRunning,
     saveSession,
     resetCurrent,
@@ -47,18 +44,6 @@ export default function PrototypeModule() {
       setCurrentHtml(agentStream.currentHtml)
     }
   }, [agentStream.currentHtml, setCurrentHtml])
-
-  useEffect(() => {
-    if (agentStream.plan) {
-      setPlan(agentStream.plan)
-    }
-  }, [agentStream.plan, setPlan])
-
-  useEffect(() => {
-    if (agentStream.steps.length > 0) {
-      setSteps(agentStream.steps)
-    }
-  }, [agentStream.steps, setSteps])
 
   // Save session when agent finishes
   useEffect(() => {
@@ -106,7 +91,6 @@ export default function PrototypeModule() {
       const storeState = useAgentStore.getState()
       const existingState = storeState.currentHtml
         ? {
-            plan: storeState.plan,
             currentHtml: storeState.currentHtml,
             htmlSnapshots: [],
             requirementSummary: '',
@@ -128,40 +112,25 @@ export default function PrototypeModule() {
   }, [resetCurrent])
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Top toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-surface">
-        <button
-          onClick={handleNewPrototype}
-          className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary border border-border rounded-lg hover:border-brand transition-colors"
-        >
-          + 新建原型
-        </button>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 min-h-0">
-        <ChatPreviewLayout
-          chatPanel={
-            <AgentChatPanel
-              messages={messages}
-              steps={steps}
-              plan={plan}
-              isRunning={isRunning}
-              clarifyQuestions={agentStream.clarifyQuestions}
-              error={agentStream.error}
-              onSend={handleSend}
-            />
-          }
-          previewPanel={
-            <IframePreview
-              ref={iframeRef}
-              htmlContent={currentHtml}
-              onQuickEdit={currentHtml ? handleSend : undefined}
-            />
-          }
+    <ChatPreviewLayout
+      chatPanel={
+        <AgentChatPanel
+          messages={messages}
+          isRunning={isRunning}
+          activities={agentStream.activities}
+          error={agentStream.error}
+          onSend={handleSend}
+          onBack={() => useAppStore.getState().goBack()}
+          onNewPrototype={handleNewPrototype}
         />
-      </div>
-    </div>
+      }
+      previewPanel={
+        <IframePreview
+          ref={iframeRef}
+          htmlContent={currentHtml}
+          onQuickEdit={currentHtml ? handleSend : undefined}
+        />
+      }
+    />
   )
 }

@@ -34,6 +34,43 @@ news.get('/today', async (c) => {
   const summaryMatch = briefing.content.match(/##\s*\**\s*今日摘要\**[^\n]*\n([\s\S]*?)(?=\n##\s|\n---|\Z)/i)
   const summary = summaryMatch ? summaryMatch[1].trim() : null
 
+  // Extract first headline from each category section (### headers)
+  const CATEGORY_MAP: Record<string, string> = {
+    '产品与功能更新': 'product',
+    '前沿研究': 'research',
+    '行业展望与社会影响': 'industry',
+    '开源TOP项目': 'opensource',
+    '开源top项目': 'opensource',
+    '社媒分享': 'social',
+    '社媒热议': 'social',
+  }
+  const categoryHeadlines: Array<{ category: string; title: string; items: string[] }> = []
+  // Split content by ### sections and extract titles from each
+  const sectionRegex = /^###\s+(.+)/gm
+  let sectionMatch: RegExpExecArray | null
+  const sections: Array<{ header: string; startIndex: number }> = []
+  while ((sectionMatch = sectionRegex.exec(briefing.content)) !== null) {
+    sections.push({ header: sectionMatch[1], startIndex: sectionMatch.index + sectionMatch[0].length })
+  }
+  for (let i = 0; i < sections.length && categoryHeadlines.length < 4; i++) {
+    const headerRaw = sections[i].header.replace(/\*+/g, '').replace(/\[.*?\]\(.*?\)/g, '').trim()
+    const categoryKey = Object.keys(CATEGORY_MAP).find(k => headerRaw.includes(k))
+    if (!categoryKey) continue
+    const endIndex = i + 1 < sections.length ? sections[i + 1].startIndex : briefing.content.length
+    const sectionContent = briefing.content.slice(sections[i].startIndex, endIndex)
+    // Extract all numbered bold titles (up to 3)
+    const allTitles: string[] = []
+    const titleRegex = /\d+\.\s+\*\*(.+?)[。！？.!?]?\*\*/g
+    let tm: RegExpExecArray | null
+    while ((tm = titleRegex.exec(sectionContent)) !== null && allTitles.length < 3) {
+      const t = tm[1].replace(/[。！？.!?]$/, '').trim()
+      if (t.length > 4) allTitles.push(t)
+    }
+    if (allTitles.length > 0) {
+      categoryHeadlines.push({ category: CATEGORY_MAP[categoryKey], title: allTitles[0], items: allTitles })
+    }
+  }
+
   // Get or generate daily keywords for AI learning
   let keywords: string[] | null = getDailyQuestions(today) ?? null
   if (!keywords) {
@@ -60,7 +97,7 @@ ARC-AGI-3|衡量AI通用推理能力的基准测试`,
     }
   }
 
-  return c.json({ summary, keywords, date: today })
+  return c.json({ summary, keywords, categoryHeadlines, date: today })
 })
 
 // GET /:id — get single briefing with content
