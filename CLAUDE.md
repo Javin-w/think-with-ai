@@ -176,11 +176,30 @@ pnpm build        # 先构建 types 包，再构建前端 → apps/client/dist/
 | 项目 | 值 |
 |------|------|
 | ECS IP | `47.111.169.246` |
+| 域名 | `pmtoken.cn` / `www.pmtoken.cn`（已备案，DNS A 记录指向上面的 IP） |
 | SSH Key | `~/.ssh/ecs_deploy`（无密码） |
 | 部署路径 | `/home/think-with-ai` |
 | Node 版本 | v20 |
-| 访问地址 | `http://47.111.169.246:5173` |
-| 安全组已开放端口 | 5173（TCP） |
+| 访问地址 | `http://pmtoken.cn` |
+
+#### 线上流量链路
+
+```
+浏览器 → pmtoken.cn:80
+       → NPM 容器（Docker nginx-app，Host 规则匹配）
+       → 宿主机 172.18.0.1:8080
+       → 系统 nginx（/etc/nginx/conf.d/think-with-ai.conf）
+         ├─ /        → /home/think-with-ai/apps/client/dist（SPA 静态）
+         └─ /api/*   → localhost:3066（Hono 后端，tsx 直接跑）
+```
+
+三层依赖在 ECS 上的形态：
+
+| 层 | 形态 | 维护方式 |
+|----|------|---------|
+| NPM（`nginx-app` 容器）| 80/443 前门，域名反代入口 | Web UI：`http://localhost:5003`（需 SSH 隧道，见下） |
+| 系统 nginx | 8080，serve dist + 反代 /api 到 3066 | `/etc/nginx/conf.d/think-with-ai.conf`，`systemctl reload nginx` |
+| 后端 Hono | 3066，`pnpm --filter server dev`（tsx watch） | 下面的部署流程 |
 
 #### SSH 连接
 
@@ -194,47 +213,87 @@ ssh -i ~/.ssh/ecs_deploy root@47.111.169.246
 # 1. 本地构建
 pnpm build
 
-# 2. 打包上传（排除 node_modules 和 .env）
-tar czf /tmp/think-with-ai.tar.gz --exclude=node_modules --exclude=.env -C /Users/bytedance/Desktop think_with_ai
+# 2. 打包上传（排除 node_modules / .env / .git 等）
+tar czf /tmp/think-with-ai.tar.gz \
+  --exclude=node_modules --exclude=.env --exclude=.git \
+  --exclude=.worktrees --exclude=.superpowers \
+  -C /Users/bytedance/Desktop think_with_ai
+
+# scp 必须前台阻塞跑（不要后台化，否则容易多进程并发写同一文件导致损坏）
 scp -i ~/.ssh/ecs_deploy /tmp/think-with-ai.tar.gz root@47.111.169.246:/tmp/
 
-# 3. ECS 上解压并替换（保留 .env 和 node_modules）
+# 上传后核对 md5（强烈建议，公网 scp 偶有截断）
+md5 /tmp/think-with-ai.tar.gz
+ssh -i ~/.ssh/ecs_deploy root@47.111.169.246 "md5sum /tmp/think-with-ai.tar.gz"
+
+# 3. ECS 上解压并同步（保留 .env / node_modules / data；ECS 无 rsync 用 tar 过滤）
+ssh -i ~/.ssh/ecs_deploy root@47.111.169.246 '
+  set -e
+  cd /home/think-with-ai
+  rm -rf /tmp/think_with_ai
+  tar xzf /tmp/think-with-ai.tar.gz -C /tmp
+  (cd /tmp/think_with_ai && tar cf - --exclude=node_modules --exclude=.env --exclude=data .) \
+    | tar xf - -C /home/think-with-ai
+  rm -rf /tmp/think_with_ai /tmp/think-with-ai.tar.gz
+  pnpm install --frozen-lockfile
+  echo "install done"
+'
+
+# 4. better-sqlite3 是原生模块，pnpm v10 默认忽略 install 脚本，需手动补
+# （首次部署或 better-sqlite3 升级后执行；之后不需要）
+ssh -i ~/.ssh/ecs_deploy root@47.111.169.246 '
+  cd /home/think-with-ai/node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3
+  npx prebuild-install
+'
+
+# 5. 重启后端服务（必须 setsid 脱离 SSH 会话，否则 ssh 断开时进程被清理）
 ssh -i ~/.ssh/ecs_deploy root@47.111.169.246 "
-  cd /home/think-with-ai &&
-  tar xzf /tmp/think-with-ai.tar.gz -C /tmp &&
-  rsync -a --exclude=node_modules --exclude=.env --exclude=data /tmp/think_with_ai/ /home/think-with-ai/ &&
-  rm -rf /tmp/think_with_ai /tmp/think-with-ai.tar.gz &&
-  pnpm install --frozen-lockfile &&
-  echo 'deploy done'
+  cd /home/think-with-ai
+  pkill -f 'tsx.*src/index.ts' 2>/dev/null || true
+  sleep 2
+  setsid bash -c 'nohup pnpm --filter server dev > app.log 2>&1' < /dev/null > /dev/null 2>&1 &
+  disown
 "
 
-# 4. 重启服务
-ssh -i ~/.ssh/ecs_deploy root@47.111.169.246 "
-  cd /home/think-with-ai &&
-  pkill -f 'tsx.*src/index.ts' || true &&
-  nohup pnpm --filter server dev > app.log 2>&1 &
-  sleep 2 && ss -tlnp | grep 5173 && echo 'server running'
-"
+# 6. 验证
+sleep 4
+curl -sS http://pmtoken.cn/api/news | head -c 80
 ```
 
-#### 运行方式
+#### 代理层（NPM + 系统 nginx）
 
-线上通过 `tsx` 直接运行后端，Hono serve 前端静态文件（`apps/client/dist/`），统一监听 5173 端口。**不使用 Vite dev 模式**（ECS 配置低会白屏）。
+日常极少需要改。结构见上面的链路图；改动点和易踩坑如下：
+
+- **NPM 管理 UI**：5003 端口未开放到公网，需 SSH 隧道访问
+  ```bash
+  ssh -i ~/.ssh/ecs_deploy -N -L 5003:localhost:5003 root@47.111.169.246
+  # 本机浏览器打开 http://127.0.0.1:5003（用 127.0.0.1，别用 localhost 防 IPv6）
+  ```
+  `pmtoken.cn` 规则里 Forward 到 `172.18.0.1:8080`（NPM 容器到宿主机的网关 IP，非 `localhost`），**Websockets Support 必开**，Advanced 里要 `proxy_buffering off` + `proxy_read_timeout 600s`（否则 SSE 流式会卡 / 断）。
+- **系统 nginx 配置**：`/etc/nginx/conf.d/think-with-ai.conf`，改完 `nginx -t && systemctl reload nginx`。`default.conf` 有语法错已禁用为 `.disabled`，不要恢复。
+- **反代 proxy_pass 关键坑**：`location /api/` 里写 `proxy_pass http://localhost:3066;` ——**尾部不要加 `/`**，否则会剥掉 `/api` 前缀导致后端 404。
+- **端口占用**：80/443 归 NPM 容器（`nginx-app`）持有，系统 nginx 永远走 8080，不要互抢。
 
 #### 注意事项
 
-- `.env` 在 ECS 上单独维护，不随代码覆盖（含 API Key）
-- `data/` 目录存放 SQLite 数据库（`news.db`），部署时不要覆盖
-- `crypto.randomUUID()` 在 HTTP 下不可用，已有 polyfill，构建时会包含
-- 域名尚未备案，当前通过 IP 直接访问
+- `.env` 在 ECS 上单独维护，不随代码覆盖（含 API Key；`PORT=3066`）
+- `data/` 目录存放 SQLite 数据库（`news.db`、WAL），部署时**必须保留**，`*.db*` 已在 `.gitignore`
+- `crypto.randomUUID()` 在 HTTP 下不可用，`apps/client/src/main.tsx` 已有 polyfill
+- ECS 上**没装 g++**，better-sqlite3 只能走 `prebuild-install` 下载预编译二进制，不能源码编译
+- ECS 上**没装 rsync**，同步文件用 tar 管道（见上面的部署流程）
+- 80 端口由 Docker `nginx-app`（NPM）容器持有，**不要**让系统 nginx 去抢 80
 
 ### 常用端口
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
 | 前端 Vite Dev Server | 5173 | 本地开发 |
-| 后端 Hono Server | 3066 | 本地开发 |
-| 线上（Hono 统一）| 5173 | 前端静态文件 + API |
+| 后端 Hono Server | 3066 | 本地开发 + 线上 |
+| 线上 NPM（docker `nginx-app`）| 80/443 | 域名入口 |
+| 线上系统 nginx | 8080 | 静态文件 + `/api` 反代 |
+| 线上 NPM 管理 UI | 5003 | 仅通过 SSH 隧道访问 |
+| 线上 Harbor | 5001 | Docker 镜像仓库（与本项目无关） |
+| 线上 Portainer | 5002 | Docker 管理 UI（与本项目无关） |
 
 ---
 
