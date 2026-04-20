@@ -208,12 +208,16 @@ export default function BranchConversationPanel({
   }, [nodeId, nodes])
 
   const userScrolledUpRef = useRef(false)
+  const autoScrollLockedRef = useRef(false)
+  const lastProgrammaticScrollRef = useRef(0)
 
-  // Track if user scrolled up manually
+  // Track if user scrolled up manually (ignore programmatic scrolls we trigger)
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
     const handleScroll = () => {
+      // Ignore scroll events fired by our own programmatic scrolls
+      if (Date.now() - lastProgrammaticScrollRef.current < 50) return
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
       userScrolledUpRef.current = distanceFromBottom > 80
     }
@@ -221,17 +225,37 @@ export default function BranchConversationPanel({
     return () => el.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Auto-scroll only if user hasn't scrolled up
+  // Reset lock whenever a new message is added (new turn begins)
   useEffect(() => {
-    if (scrollRef.current && !userScrolledUpRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    autoScrollLockedRef.current = false
+    userScrolledUpRef.current = false
+  }, [messages.length])
+
+  // Auto-scroll during streaming, but lock once the latest user question reaches the viewport top
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    if (autoScrollLockedRef.current || userScrolledUpRef.current) return
+
+    const userMsgs = el.querySelectorAll<HTMLElement>('[data-user-message]')
+    const lastUserMsg = userMsgs[userMsgs.length - 1]
+
+    // Lock once the latest Q has scrolled up to the viewport top — let user read from the beginning
+    if (lastUserMsg && el.scrollTop >= lastUserMsg.offsetTop) {
+      autoScrollLockedRef.current = true
+      return
     }
+
+    lastProgrammaticScrollRef.current = Date.now()
+    el.scrollTop = el.scrollHeight
   }, [messages])
 
-  // Reset scroll lock when switching nodes or when streaming starts
+  // Reset scroll when switching nodes
   useEffect(() => {
     userScrolledUpRef.current = false
+    autoScrollLockedRef.current = false
     if (scrollRef.current) {
+      lastProgrammaticScrollRef.current = Date.now()
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [nodeId])
@@ -325,7 +349,7 @@ export default function BranchConversationPanel({
             const renderedBranchIds = new Set<string>()
             return messages.map(msg => (
               msg.role === 'user' ? (
-                <div key={msg.id} className="mb-5">
+                <div key={msg.id} data-user-message className="mb-5">
                   {msg.images && msg.images.length > 0 && (
                     <div className="flex gap-2 mb-2">
                       {msg.images.map((src, i) => (

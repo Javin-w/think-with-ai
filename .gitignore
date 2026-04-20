@@ -9,3 +9,6 @@ e2e-screenshots/
 log/
 .worktrees/
 .superpowers/
+*.db
+*.db-wal
+*.db-shm

@@ -21,14 +21,18 @@ const nodeTypes: NodeTypes = {
 
 const NODE_WIDTH = 160
 const NODE_HEIGHT = 44
+const COMPACT_NODE_WIDTH = 120
+const COMPACT_NODE_HEIGHT = 32
 
-function getLayoutedElements(nodes: Node[], edges: Edge[]) {
+function getLayoutedElements(nodes: Node[], edges: Edge[], compact?: boolean) {
+  const w = compact ? COMPACT_NODE_WIDTH : NODE_WIDTH
+  const h = compact ? COMPACT_NODE_HEIGHT : NODE_HEIGHT
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
-  g.setGraph({ rankdir: 'LR', nodesep: 24, ranksep: 70 })
+  g.setGraph({ rankdir: 'LR', nodesep: compact ? 16 : 24, ranksep: compact ? 48 : 70 })
 
   nodes.forEach(node => {
-    g.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
+    g.setNode(node.id, { width: w, height: h })
   })
   edges.forEach(edge => {
     g.setEdge(edge.source, edge.target)
@@ -40,8 +44,8 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
     return {
       ...node,
       position: {
-        x: pos.x - NODE_WIDTH / 2,
-        y: pos.y - NODE_HEIGHT / 2,
+        x: pos.x - w / 2,
+        y: pos.y - h / 2,
       },
     }
   })
@@ -57,7 +61,7 @@ function getNodeLabel(node: TreeNode, maxLen = 40): string {
   return '新对话'
 }
 
-function treeNodesToFlow(treeNodes: TreeNode[], currentNodeId: string | null, ancestorIds: Set<string>) {
+function treeNodesToFlow(treeNodes: TreeNode[], currentNodeId: string | null, ancestorIds: Set<string>, compact?: boolean) {
   const nodes: Node[] = treeNodes.map(node => {
     const childCount = treeNodes.filter(n => n.parentId === node.id).length
     return {
@@ -65,12 +69,13 @@ function treeNodesToFlow(treeNodes: TreeNode[], currentNodeId: string | null, an
       type: 'treeMapNode',
       position: { x: 0, y: 0 },
       data: {
-        label: getNodeLabel(node),
+        label: getNodeLabel(node, compact ? 20 : 40),
         isActive: node.id === currentNodeId,
         isOnPath: ancestorIds.has(node.id),
         isRoot: node.parentId === null,
         messageCount: node.messages.length,
         childCount,
+        compact,
       },
     }
   })
@@ -88,14 +93,15 @@ function treeNodesToFlow(treeNodes: TreeNode[], currentNodeId: string | null, an
       },
     }))
 
-  return getLayoutedElements(nodes, edges)
+  return getLayoutedElements(nodes, edges, compact)
 }
 
 interface TreeMapViewProps {
   treeId: string | null
+  compact?: boolean
 }
 
-export default function TreeMapView({ treeId }: TreeMapViewProps) {
+export default function TreeMapView({ treeId, compact }: TreeMapViewProps) {
   const { nodes: treeNodes, currentNodeId, setCurrentNode } = useTreeStore()
 
   const currentTreeNodes = useMemo(
@@ -109,8 +115,8 @@ export default function TreeMapView({ treeId }: TreeMapViewProps) {
   }, [currentTreeNodes, currentNodeId])
 
   const { nodes: flowNodes, edges: flowEdges } = useMemo(
-    () => treeNodesToFlow(currentTreeNodes, currentNodeId, ancestorIds),
-    [currentTreeNodes, currentNodeId, ancestorIds]
+    () => treeNodesToFlow(currentTreeNodes, currentNodeId, ancestorIds, compact),
+    [currentTreeNodes, currentNodeId, ancestorIds, compact]
   )
 
   const [, , onNodesChange] = useNodesState(flowNodes)
@@ -138,16 +144,16 @@ export default function TreeMapView({ treeId }: TreeMapViewProps) {
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.4 }}
+        fitViewOptions={{ padding: compact ? 0.2 : 0.4 }}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
         panOnDrag
         zoomOnScroll
-        minZoom={0.3}
+        minZoom={compact ? 0.2 : 0.3}
         maxZoom={2}
       >
-        <Background color="#e2e8f0" gap={20} size={1} />
+        {!compact && <Background color="#e2e8f0" gap={20} size={1} />}
       </ReactFlow>
     </div>
   )

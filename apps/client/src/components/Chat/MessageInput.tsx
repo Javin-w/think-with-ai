@@ -23,7 +23,7 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault()
       handleSend()
     }

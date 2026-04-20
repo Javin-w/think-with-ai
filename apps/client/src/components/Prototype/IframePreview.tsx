@@ -15,6 +15,9 @@ const VIEWPORT_PRESETS = [
   { name: '桌面', width: 0, icon: '🖥️' }, // 0 = full width
 ]
 
+/** Injected at the end of srcDoc to prevent links from navigating away */
+const NAVIGATION_GUARD = `<script>document.addEventListener('click',function(e){var a=e.target.closest('a');if(a){e.preventDefault();}},true);</script>`
+
 const QUICK_EDITS = [
   { label: '放大字号', instruction: '把页面整体字号放大一号，标题和正文都适当增大' },
   { label: '换配色', instruction: '换一套更现代的配色方案，保持整体和谐' },
@@ -174,7 +177,7 @@ function IframePreviewInner({ htmlContent, onQuickEdit }: IframePreviewProps, re
           }}
         >
           <iframe
-            srcDoc={htmlContent}
+            srcDoc={htmlContent + NAVIGATION_GUARD}
             ref={iframeRef}
             sandbox="allow-scripts allow-same-origin"
             className="w-full h-full border-0"

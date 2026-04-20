@@ -45,6 +45,18 @@ export default function PrototypeModule() {
     }
   }, [agentStream.currentHtml, setCurrentHtml])
 
+  // Save session on unmount (user navigates away mid-conversation)
+  useEffect(() => {
+    return () => {
+      const { currentSessionId, messages } = useAgentStore.getState()
+      if (currentSessionId && messages.length > 0) {
+        agentStream.abort()
+        useAgentStore.getState().saveSession()
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Save session when agent finishes
   useEffect(() => {
     if (!agentStream.isRunning && savePendingRef.current) {
@@ -108,8 +120,9 @@ export default function PrototypeModule() {
   )
 
   const handleNewPrototype = useCallback(() => {
+    agentStream.reset()
     resetCurrent()
-  }, [resetCurrent])
+  }, [agentStream, resetCurrent])
 
   return (
     <ChatPreviewLayout

@@ -27,7 +27,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
   const rest = trees.slice(1)
 
   return (
-    <div className="min-h-screen bg-surface-secondary">
+    <div className="h-full overflow-y-auto bg-surface-secondary">
       <section className="px-12 py-12 max-w-6xl mx-auto">
         {/* Editorial Header */}
         <div className="mb-16">

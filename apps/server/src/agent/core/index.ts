@@ -12,4 +12,7 @@ export type {
   SSEEmitter,
   FeedbackRequester,
   AgentRequestFeedbackEvent,
+  ToolDefinition,
+  ToolExecutor,
+  ToolSet,
 } from './types'

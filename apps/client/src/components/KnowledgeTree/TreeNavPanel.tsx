@@ -1,34 +1,24 @@
 import { useMemo, useState, useCallback } from 'react'
-import { PanelLeftClose, PanelLeftOpen, List, GitFork } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, GitFork } from 'lucide-react'
 import { useAppStore } from '../../store/appStore'
 import { useTreeStore } from '../../store/treeStore'
 import { buildTreeStructure, getAncestorChain, serializeTreeForExport } from '../../store/treeUtils'
 import TreeNavNode from './TreeNavNode'
-import TreeMapView from './TreeMapView'
 
 interface TreeNavPanelProps {
   treeId: string | null
   onBack: () => void
   onExportLark?: (markdown: string, title: string) => void
+  mapOpen?: boolean
+  onToggleMap?: () => void
 }
 
-export default function TreeNavPanel({ treeId, onBack, onExportLark }: TreeNavPanelProps) {
+export default function TreeNavPanel({ treeId, onBack, onExportLark, mapOpen, onToggleMap }: TreeNavPanelProps) {
   const { nodes, currentNodeId, setCurrentNode, trees } = useTreeStore()
   const { goHome } = useAppStore()
   const [collapsed, setCollapsed] = useState(false)
-  const [viewMode, setViewMode] = useState<'list' | 'map'>(() => {
-    return (localStorage.getItem('treeNavViewMode') as 'list' | 'map') || 'list'
-  })
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState<string | null>(null)
-
-  const toggleViewMode = useCallback(() => {
-    setViewMode(prev => {
-      const next = prev === 'list' ? 'map' : 'list'
-      localStorage.setItem('treeNavViewMode', next)
-      return next
-    })
-  }, [])
 
   const currentTreeNodes = useMemo(
     () => nodes.filter(n => n.treeId === treeId),
@@ -96,7 +86,7 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark }: TreeNavPa
   // Collapsed
   if (collapsed) {
     return (
-      <div className="w-8 h-full flex flex-col items-center pt-3 shrink-0">
+      <div className="w-8 h-full flex flex-col items-center pt-3 gap-2 shrink-0">
         <button
           onClick={() => setCollapsed(false)}
           className="w-5 h-5 flex items-center justify-center text-text-secondary/40 hover:text-text-secondary rounded transition-colors"
@@ -104,14 +94,21 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark }: TreeNavPa
         >
           <PanelLeftOpen size={14} strokeWidth={1.5} />
         </button>
+        {onToggleMap && (
+          <button
+            onClick={onToggleMap}
+            className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${mapOpen ? 'text-brand' : 'text-text-secondary/40 hover:text-text-secondary'}`}
+            title={mapOpen ? '收起图谱' : '展开图谱'}
+          >
+            <GitFork size={13} strokeWidth={1.5} />
+          </button>
+        )}
       </div>
     )
   }
 
-  const isMapMode = viewMode === 'map'
-
   return (
-    <div className={`${isMapMode ? 'w-80' : 'w-52'} h-full border-r border-border/30 flex flex-col shrink-0 transition-all duration-300`}>
+    <div className="w-52 h-full border-r border-border/30 flex flex-col shrink-0">
       {/* Header */}
       <div className="px-3 py-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -128,13 +125,13 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark }: TreeNavPa
           </span>
         </div>
         <div className="flex items-center gap-1">
-          {currentTreeNodes.length > 0 && (
+          {onToggleMap && (
             <button
-              onClick={toggleViewMode}
-              className="w-5 h-5 flex items-center justify-center text-text-secondary/30 hover:text-text-secondary/60 rounded transition-colors"
-              title={isMapMode ? '切换列表' : '切换图谱'}
+              onClick={onToggleMap}
+              className={`w-5 h-5 flex items-center justify-center rounded transition-colors ${mapOpen ? 'text-brand' : 'text-text-secondary/30 hover:text-text-secondary/60'}`}
+              title={mapOpen ? '收起图谱' : '展开图谱'}
             >
-              {isMapMode ? <List size={13} strokeWidth={1.5} /> : <GitFork size={13} strokeWidth={1.5} />}
+              <GitFork size={13} strokeWidth={1.5} />
             </button>
           )}
           <button
@@ -149,28 +146,24 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark }: TreeNavPa
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        {isMapMode ? (
-          <TreeMapView treeId={treeId} />
-        ) : (
-          <div className="h-full overflow-y-auto py-1">
-            {treeStructure.length === 0 ? (
-              <div className="px-3 py-6 text-xs text-text-secondary/40 text-center">
-                开始对话后显示
-              </div>
-            ) : (
-              treeStructure.map(item => (
-                <TreeNavNode
-                  key={item.node.id}
-                  item={item}
-                  currentNodeId={currentNodeId}
-                  onSelect={setCurrentNode}
-                  depth={0}
-                  defaultExpanded={expandedPathIds.has(item.node.id)}
-                />
-              ))
-            )}
-          </div>
-        )}
+        <div className="h-full overflow-y-auto py-1">
+          {treeStructure.length === 0 ? (
+            <div className="px-3 py-6 text-xs text-text-secondary/40 text-center">
+              开始对话后显示
+            </div>
+          ) : (
+            treeStructure.map(item => (
+              <TreeNavNode
+                key={item.node.id}
+                item={item}
+                currentNodeId={currentNodeId}
+                onSelect={setCurrentNode}
+                depth={0}
+                defaultExpanded={expandedPathIds.has(item.node.id)}
+              />
+            ))
+          )}
+        </div>
       </div>
 
       {/* Footer */}

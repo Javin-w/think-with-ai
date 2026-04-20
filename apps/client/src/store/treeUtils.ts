@@ -92,5 +92,18 @@ export function getContextMessages(nodes: TreeNode[], nodeId: string): ChatMessa
   // Current node's messages (all of them — the hook will send the latest user msg separately)
   const currentNode = chain[chain.length - 1]
   const currentMessages = currentNode ? currentNode.messages : []
+
+  // When a node was created from a text selection, inject a bridge message
+  // so the AI answers in the context of the selected text, not as a standalone question
+  if (currentNode?.selectedText) {
+    const bridgeMsg: ChatMessage = {
+      id: 'branch-context',
+      role: 'user',
+      content: `[用户在上文回答中选中了「${currentNode.selectedText}」，并基于此创建了分支来深入探讨。请围绕这段选中内容来回答后续问题。]`,
+      createdAt: currentNode.createdAt,
+    }
+    return [...parentMessages, bridgeMsg, ...currentMessages]
+  }
+
   return [...parentMessages, ...currentMessages]
 }

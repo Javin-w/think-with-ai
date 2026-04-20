@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import TreeList from './components/TreeList/TreeList'
 import Homepage from './components/Homepage/Homepage'
 import Sidebar from './components/Sidebar/Sidebar'
 import TreeNavPanel from './components/KnowledgeTree/TreeNavPanel'
 import BranchConversationPanel from './components/KnowledgeTree/BranchConversationPanel'
 import AnnotationsPanel from './components/KnowledgeTree/AnnotationsPanel'
+import TreeMapFloat from './components/KnowledgeTree/TreeMapFloat'
 import { useTreeStore } from './store/treeStore'
 import { useAppStore } from './store/appStore'
 import { useNodeStream } from './hooks/useNodeStream'
@@ -39,6 +40,14 @@ function App() {
   const [pendingAnnotation, setPendingAnnotation] = useState<{ selectedText: string; messageId: string } | null>(null)
   const [activeAnnotationId, setActiveAnnotationId] = useState<string | null>(null)
   const [annotationsPanelCollapsed, setAnnotationsPanelCollapsed] = useState(true)
+  const [mapFloatOpen, setMapFloatOpen] = useState(() => localStorage.getItem('treeMapFloatOpen') === 'true')
+  const toggleMapFloat = useCallback(() => {
+    setMapFloatOpen(prev => {
+      const next = !prev
+      localStorage.setItem('treeMapFloatOpen', String(next))
+      return next
+    })
+  }, [])
 
   useEffect(() => {
     if (currentView === 'thinking-list') {
@@ -136,8 +145,10 @@ function App() {
   const handleBranch = async (selectedText: string) => {
     if (!currentNodeId || isStreaming) return
     dismissBranchTip()
-    await createNode(currentNodeId, selectedText)
+    const newNode = await createNode(currentNodeId, selectedText)
     triggerFirstBranchCelebration()
+    const autoPrompt = `请解释「${selectedText}」。`
+    await sendMessage(newNode.id, autoPrompt)
   }
 
   const handleAnnotate = (selectedText: string, messageId: string) => {
@@ -187,7 +198,7 @@ function App() {
       case 'thinking-tree':
         return (
           <div className="flex h-screen relative">
-            <TreeNavPanel treeId={currentTreeId} onBack={handleBackToList} onExportLark={handleExportLark} />
+            <TreeNavPanel treeId={currentTreeId} onBack={handleBackToList} onExportLark={handleExportLark} mapOpen={mapFloatOpen} onToggleMap={toggleMapFloat} />
             <BranchConversationPanel
               nodeId={currentNodeId}
               onSend={handleSend}
@@ -197,6 +208,7 @@ function App() {
               activeAnnotationId={activeAnnotationId}
               isStreaming={isStreaming}
             />
+            {mapFloatOpen && <TreeMapFloat treeId={currentTreeId} onClose={toggleMapFloat} />}
             <AnnotationsPanel
               nodeId={currentNodeId}
               pendingAnnotation={pendingAnnotation}

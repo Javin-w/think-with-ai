@@ -8,16 +8,18 @@ interface TreeMapNodeData {
   isRoot: boolean
   messageCount: number
   childCount: number
+  compact?: boolean
 }
 
 function TreeMapNode({ data }: { data: TreeMapNodeData }) {
   const isHighlighted = data.isActive || data.isOnPath
+  const isCompact = data.compact
 
   return (
     <div
       className={`
-        px-3 py-2 rounded-lg text-xs max-w-[150px] cursor-pointer
-        border transition-all duration-200
+        ${isCompact ? 'px-2 py-1 rounded-md text-[10px] max-w-[110px]' : 'px-3 py-2 rounded-lg text-xs max-w-[150px]'}
+        cursor-pointer border transition-all duration-200
         ${data.isActive
           ? 'border-brand bg-white shadow-md text-text-primary ring-2 ring-brand/30'
           : data.isOnPath
@@ -30,7 +32,7 @@ function TreeMapNode({ data }: { data: TreeMapNodeData }) {
       <p className={`truncate leading-tight ${data.isActive ? 'font-medium' : ''}`}>
         {data.label}
       </p>
-      {(data.messageCount > 0 || data.childCount > 0) && (
+      {!isCompact && (data.messageCount > 0 || data.childCount > 0) && (
         <div className="flex items-center gap-1.5 mt-1">
           {data.messageCount > 0 && (
             <span className={`text-[9px] ${isHighlighted ? 'text-brand/60' : 'text-text-secondary/40'}`}>

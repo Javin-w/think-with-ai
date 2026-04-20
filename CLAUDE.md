@@ -169,16 +169,72 @@ pnpm build        # 先构建 types 包，再构建前端 → apps/client/dist/
 
 <!-- 暂无测试框架配置 -->
 
-### 部署
+### 部署（阿里云 ECS）
 
-<!-- 暂无部署配置 -->
+#### 服务器信息
+
+| 项目 | 值 |
+|------|------|
+| ECS IP | `47.111.169.246` |
+| SSH Key | `~/.ssh/ecs_deploy`（无密码） |
+| 部署路径 | `/home/think-with-ai` |
+| Node 版本 | v20 |
+| 访问地址 | `http://47.111.169.246:5173` |
+| 安全组已开放端口 | 5173（TCP） |
+
+#### SSH 连接
+
+```bash
+ssh -i ~/.ssh/ecs_deploy root@47.111.169.246
+```
+
+#### 部署流程
+
+```bash
+# 1. 本地构建
+pnpm build
+
+# 2. 打包上传（排除 node_modules 和 .env）
+tar czf /tmp/think-with-ai.tar.gz --exclude=node_modules --exclude=.env -C /Users/bytedance/Desktop think_with_ai
+scp -i ~/.ssh/ecs_deploy /tmp/think-with-ai.tar.gz root@47.111.169.246:/tmp/
+
+# 3. ECS 上解压并替换（保留 .env 和 node_modules）
+ssh -i ~/.ssh/ecs_deploy root@47.111.169.246 "
+  cd /home/think-with-ai &&
+  tar xzf /tmp/think-with-ai.tar.gz -C /tmp &&
+  rsync -a --exclude=node_modules --exclude=.env --exclude=data /tmp/think_with_ai/ /home/think-with-ai/ &&
+  rm -rf /tmp/think_with_ai /tmp/think-with-ai.tar.gz &&
+  pnpm install --frozen-lockfile &&
+  echo 'deploy done'
+"
+
+# 4. 重启服务
+ssh -i ~/.ssh/ecs_deploy root@47.111.169.246 "
+  cd /home/think-with-ai &&
+  pkill -f 'tsx.*src/index.ts' || true &&
+  nohup pnpm --filter server dev > app.log 2>&1 &
+  sleep 2 && ss -tlnp | grep 5173 && echo 'server running'
+"
+```
+
+#### 运行方式
+
+线上通过 `tsx` 直接运行后端，Hono serve 前端静态文件（`apps/client/dist/`），统一监听 5173 端口。**不使用 Vite dev 模式**（ECS 配置低会白屏）。
+
+#### 注意事项
+
+- `.env` 在 ECS 上单独维护，不随代码覆盖（含 API Key）
+- `data/` 目录存放 SQLite 数据库（`news.db`），部署时不要覆盖
+- `crypto.randomUUID()` 在 HTTP 下不可用，已有 polyfill，构建时会包含
+- 域名尚未备案，当前通过 IP 直接访问
 
 ### 常用端口
 
-| 服务 | 端口 |
-|------|------|
-| 前端 Vite Dev Server | 5173 |
-| 后端 Hono Server | 3066 |
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| 前端 Vite Dev Server | 5173 | 本地开发 |
+| 后端 Hono Server | 3066 | 本地开发 |
+| 线上（Hono 统一）| 5173 | 前端静态文件 + API |
 
 ---
 

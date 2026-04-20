@@ -24,6 +24,7 @@ export interface UseAgentStreamReturn {
   activities: AgentActivity[]
   error: string | null
   abort: () => void
+  reset: () => void
 }
 
 export function useAgentStream(options?: UseAgentStreamOptions): UseAgentStreamReturn {
@@ -35,8 +36,6 @@ export function useAgentStream(options?: UseAgentStreamOptions): UseAgentStreamR
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const startTimeRef = useRef(0)
-  const textIdleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const stepCountRef = useRef(0)
 
   const addActivity = (type: AgentActivity['type'], content: string, elapsed?: number) => {
     setActivities(prev => [...prev, {
@@ -53,8 +52,6 @@ export function useAgentStream(options?: UseAgentStreamOptions): UseAgentStreamR
     setCompletionText('')
     setActivities([])
     startTimeRef.current = Date.now()
-    stepCountRef.current = 0
-    if (textIdleTimerRef.current) clearTimeout(textIdleTimerRef.current)
 
     abortControllerRef.current = new AbortController()
 
@@ -139,7 +136,7 @@ export function useAgentStream(options?: UseAgentStreamOptions): UseAgentStreamR
           const tool = (event as any).tool as string
           const summary = (event as any).summary as string
 
-          if (tool === 'thinking') {
+          if (tool === 'thinking' || tool === 'code-generating') {
             addActivity('thinking', summary, elapsed)
           } else if (tool === 'agent-text-start') {
             // Start of streaming reasoning text — add empty text activity
@@ -153,18 +150,10 @@ export function useAgentStream(options?: UseAgentStreamOptions): UseAgentStreamR
               }
               return [...prev, { id: crypto.randomUUID(), type: 'text', content: summary, elapsed: elapsed ?? 0 }]
             })
-            // Debounce: if text stops for 800ms, insert "generating code" hint
-            if (textIdleTimerRef.current) clearTimeout(textIdleTimerRef.current)
-            textIdleTimerRef.current = setTimeout(() => {
-              stepCountRef.current++
-              addActivity('thinking', `正在生成第 ${stepCountRef.current} 部分代码...`)
-            }, 800)
             return
           } else if (tool === 'agent-text') {
             addActivity('text', summary, elapsed)
           } else if (tool === 'generate_html') {
-            // Clear debounce timer — code generation done
-            if (textIdleTimerRef.current) { clearTimeout(textIdleTimerRef.current); textIdleTimerRef.current = null }
             addActivity('tool-done', summary, elapsed)
           }
 
@@ -172,8 +161,6 @@ export function useAgentStream(options?: UseAgentStreamOptions): UseAgentStreamR
           break
         }
         case 'preview':
-          // Clear debounce timer if code arrived
-          if (textIdleTimerRef.current) { clearTimeout(textIdleTimerRef.current); textIdleTimerRef.current = null }
           setCurrentHtml(event.html)
           break
         case 'complete':
@@ -204,6 +191,15 @@ export function useAgentStream(options?: UseAgentStreamOptions): UseAgentStreamR
     abortControllerRef.current?.abort()
   }, [])
 
+  const reset = useCallback(() => {
+    abortControllerRef.current?.abort()
+    setIsRunning(false)
+    setCurrentHtml('')
+    setCompletionText('')
+    setActivities([])
+    setError(null)
+  }, [])
+
   return {
     runAgent,
     isRunning,
@@ -212,5 +208,6 @@ export function useAgentStream(options?: UseAgentStreamOptions): UseAgentStreamR
     activities,
     error,
     abort,
+    reset,
   }
 }

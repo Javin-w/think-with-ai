@@ -60,6 +60,27 @@ export interface AgentState<T> {
   moduleState: T
 }
 
+// ── Tool Types (direct API, no AI SDK) ──
+
+/** OpenAI function-calling tool definition (JSON Schema) */
+export interface ToolDefinition {
+  type: 'function'
+  function: {
+    name: string
+    description: string
+    parameters: Record<string, unknown>
+  }
+}
+
+/** A tool executor takes parsed arguments and returns a string result */
+export type ToolExecutor = (args: Record<string, unknown>) => Promise<string>
+
+/** Bundle of tool definitions + executors returned by createTools */
+export interface ToolSet {
+  definitions: ToolDefinition[]
+  executors: Record<string, ToolExecutor>
+}
+
 // ── Agent Module Config (each module implements this) ──
 
 export interface AgentModuleConfig<T> {
@@ -74,7 +95,7 @@ export interface AgentModuleConfig<T> {
   /** Create initial module state (optionally from persisted state) */
   createInitialState: (existing?: Partial<T>) => T
   /** Create tools bound to current state, SSE emitter, and feedback requester */
-  createTools: (state: AgentState<T>, emit: SSEEmitter, requestFeedback: FeedbackRequester) => Record<string, unknown>
+  createTools: (state: AgentState<T>, emit: SSEEmitter, requestFeedback: FeedbackRequester) => ToolSet
   /** Build system prompt from current state (called each iteration) */
   buildSystemPrompt: (state: AgentState<T>) => string
 }

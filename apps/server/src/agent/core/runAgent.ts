@@ -1,13 +1,13 @@
 /**
  * Generic Agent ReAct Loop (streaming)
  *
- * Uses streamText for real-time status feedback.
- * Partial HTML preview when toolCallStreaming is supported.
+ * Uses direct HTTP streaming to Moonshot API for precise event timing control.
+ * Tool execution happens AFTER the stream ends, giving us:
+ *   text streaming → "正在生成代码..." → tool executes → preview → "✓ 完成"
  */
 
-import { streamText } from 'ai'
-import { createModelInstance } from '../../providers'
-import type { AgentModuleConfig, AgentState, AgentEvent, AgentRunOptions, FeedbackRequester } from './types'
+import { streamChat } from './llm'
+import type { AgentModuleConfig, AgentState, AgentEvent, AgentRunOptions, FeedbackRequester, ToolSet } from './types'
 
 export const pendingFeedback = new Map<string, (data: string) => void>()
 
@@ -64,17 +64,19 @@ export function runAgent<T>(
         moduleState: config.createInitialState(existingModuleState as Partial<T> | undefined),
       }
 
-      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = []
+      // Message history in OpenAI format
+      const messages: Array<Record<string, unknown>> = []
       if (existingMessages && existingMessages.length > 0) {
         messages.push(...existingMessages)
       }
       messages.push({ role: 'user', content: message })
 
-      const aiModelInstance = createModelInstance(
-        provider ?? config.defaultProvider,
-        model ?? config.defaultModel,
-      )
-      const tools = config.createTools(state, emit, requestFeedback)
+      const toolSet: ToolSet = config.createTools(state, emit, requestFeedback)
+
+      // API config
+      const apiKey = process.env.MOONSHOT_API_KEY ?? ''
+      const baseURL = 'https://api.moonshot.cn/v1'
+      const modelId = model ?? config.defaultModel
 
       try {
         while (state.stepCount < config.maxSteps) {
@@ -87,61 +89,108 @@ export function runAgent<T>(
             : `正在构建第 ${state.stepCount + 1} 部分...`
           emit({ type: 'step', tool: 'thinking', summary: stepLabel, elapsed: elapsedSec() })
 
-          const result = streamText({
-            model: aiModelInstance,
-            system: config.buildSystemPrompt(state),
-            messages,
-            tools: tools as any,
-            maxSteps: 1,
-            temperature: 0.6,
-            maxTokens: 8000,
-          })
-
-          // Stream text portion in real-time (agent reasoning)
+          // Stream from Moonshot API
           let fullText = ''
           let textStarted = false
-          for await (const chunk of result.textStream) {
-            fullText += chunk
-            // Emit streaming text as it arrives
-            if (!textStarted && chunk.trim()) {
-              textStarted = true
-              emit({ type: 'step', tool: 'agent-text-start', summary: '', elapsed: elapsedSec() })
-            }
-            if (textStarted) {
-              emit({ type: 'step', tool: 'agent-text-delta', summary: chunk, elapsed: elapsedSec() })
-            }
-          }
+          let toolCalls: Array<{ id: string; type: string; function: { name: string; arguments: string } }> = []
 
-          // Wait for tool calls to finish (frontend shows "正在生成代码..." via debounce)
-          const finalResult = await result.response
-          const genElapsed = ((Date.now() - stepStart) / 1000).toFixed(1)
-          state.stepCount++
+          const stream = streamChat({
+            apiKey,
+            baseURL,
+            model: modelId,
+            messages,
+            tools: toolSet.definitions,
+            system: config.buildSystemPrompt(state),
+            temperature: 0.6,
+            maxTokens: 8000,
+            extraBody: { thinking: { type: 'disabled' } },
+          })
 
-          const hasToolCalls = finalResult.messages.some(
-            (msg: any) => msg.role === 'assistant' && msg.content?.some?.((c: any) => c.type === 'tool-call'),
-          )
-
-          log('step', `streamText done in ${genElapsed}s, hasToolCalls=${hasToolCalls}, textLen=${fullText.length}`)
-
-          // Emit tool-done events (tool's preview emit already happened during execution)
-          for (const msg of finalResult.messages) {
-            const content = (msg as any).content
-            if (Array.isArray(content)) {
-              for (const part of content) {
-                if (part.type === 'tool-call') {
-                  const args = part.args as Record<string, unknown>
-                  const summary = (args?.changeSummary as string) || `调用 ${part.toolName}`
-                  emit({ type: 'step', tool: part.toolName, summary, elapsed: elapsedSec() })
+          for await (const event of stream) {
+            switch (event.type) {
+              case 'text-delta': {
+                fullText += event.text
+                if (!textStarted && event.text.trim()) {
+                  textStarted = true
+                  emit({ type: 'step', tool: 'agent-text-start', summary: '', elapsed: elapsedSec() })
                 }
+                if (textStarted) {
+                  emit({ type: 'step', tool: 'agent-text-delta', summary: event.text, elapsed: elapsedSec() })
+                }
+                break
+              }
+              case 'tool-calls-start': {
+                // PRECISE MOMENT: tool calls detected, BEFORE execution
+                emit({
+                  type: 'step',
+                  tool: 'code-generating',
+                  summary: `正在生成第 ${state.stepCount + 1} 部分代码...`,
+                  elapsed: elapsedSec(),
+                })
+                break
+              }
+              case 'tool-calls-done': {
+                toolCalls = event.calls
+                break
+              }
+              case 'done': {
+                // Add assistant message to conversation history
+                messages.push({ ...event.message } as Record<string, unknown>)
+                break
               }
             }
           }
 
-          // Add response messages for next iteration
-          for (const msg of finalResult.messages) {
-            messages.push(msg as any)
+          const genElapsed = ((Date.now() - stepStart) / 1000).toFixed(1)
+          state.stepCount++
+          const hasToolCalls = toolCalls.length > 0
+
+          log('step', `stream done in ${genElapsed}s, hasToolCalls=${hasToolCalls}, textLen=${fullText.length}`)
+
+          // Execute tool calls manually, AFTER the stream is complete
+          if (hasToolCalls) {
+            for (const tc of toolCalls) {
+              const toolName = tc.function.name
+              const executor = toolSet.executors[toolName]
+              if (!executor) {
+                log('ERROR', `Unknown tool: ${toolName}`)
+                messages.push({ role: 'tool', tool_call_id: tc.id, content: `Error: unknown tool ${toolName}` })
+                continue
+              }
+
+              let args: Record<string, unknown>
+              try {
+                args = JSON.parse(tc.function.arguments)
+              } catch (parseErr) {
+                const argsLen = tc.function.arguments?.length ?? 0
+                const argsPreview = tc.function.arguments?.slice(-200) ?? ''
+                log('ERROR', `Failed to parse tool args for ${toolName} (len=${argsLen}, tail="${argsPreview}")`)
+                // Still push tool result to keep conversation history consistent
+                messages.push({
+                  role: 'tool',
+                  tool_call_id: tc.id,
+                  content: `Error: failed to parse tool arguments`,
+                })
+                continue
+              }
+
+              log('tool', `executing ${toolName}...`)
+              const result = await executor(args)
+
+              // Emit tool-done (preview was already emitted by the executor)
+              const summary = (args.changeSummary as string) || `调用 ${toolName}`
+              emit({ type: 'step', tool: toolName, summary, elapsed: elapsedSec() })
+
+              // Add tool result to conversation history
+              messages.push({
+                role: 'tool',
+                tool_call_id: tc.id,
+                content: result,
+              })
+            }
           }
 
+          // No tool calls → agent is done
           if (!hasToolCalls) {
             emit({
               type: 'complete',
