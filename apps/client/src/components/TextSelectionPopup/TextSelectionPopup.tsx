@@ -115,7 +115,7 @@ export default function TextSelectionPopup({ onBranch, onAnnotate, disabled = fa
       ref={refs.setFloating}
       style={floatingStyles}
       data-testid="explore-popup"
-      className="z-50 flex items-center gap-0 bg-white border border-border rounded-lg shadow-md overflow-hidden"
+      className="z-50 flex items-center gap-0 bg-surface border border-border rounded-lg shadow-md overflow-hidden"
     >
       <button
         onMouseDown={(e) => e.preventDefault()}
@@ -130,7 +130,7 @@ export default function TextSelectionPopup({ onBranch, onAnnotate, disabled = fa
           <button
             onMouseDown={(e) => e.preventDefault()}
             onClick={handleAnnotateClick}
-            className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-slate-50 transition-colors whitespace-nowrap"
+            className="px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors whitespace-nowrap"
           >
             批注
           </button>

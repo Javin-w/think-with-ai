@@ -79,7 +79,7 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
   return (
     <div className="p-4">
       <div
-        className="rounded-2xl border border-border bg-white shadow-sm overflow-hidden"
+        className="rounded-2xl border border-border bg-surface shadow-sm overflow-hidden"
         onDrop={handleDrop}
         onDragOver={e => e.preventDefault()}
       >
@@ -130,8 +130,8 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
             disabled={disabled || !hasContent}
             className={`w-8 h-8 flex items-center justify-center rounded-full transition-all ${
               hasContent && !disabled
-                ? 'bg-text-primary text-white hover:bg-text-primary/80'
-                : 'bg-slate-100 text-text-secondary/30'
+                ? 'bg-brand text-surface-secondary hover:bg-brand-hover'
+                : 'bg-surface-secondary text-text-muted border border-border'
             }`}
           >
             <ArrowRight size={16} strokeWidth={2} />

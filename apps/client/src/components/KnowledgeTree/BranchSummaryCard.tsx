@@ -29,7 +29,7 @@ export default function BranchSummaryCard({ branches }: BranchSummaryCardProps) 
           <div key={branch.id} className="border border-border/60 rounded-lg overflow-hidden">
             {/* Collapsed header */}
             <div
-              className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-surface-secondary transition-colors"
               onClick={() => setExpandedId(isExpanded ? null : branch.id)}
             >
               <span className="text-xs">{isExpanded ? '▼' : '▸'}</span>
@@ -55,7 +55,7 @@ export default function BranchSummaryCard({ branches }: BranchSummaryCardProps) 
 
             {/* Expanded: show branch conversation */}
             {isExpanded && (
-              <div className="border-t border-border/40 px-4 py-3 bg-slate-50/50 max-h-60 overflow-y-auto">
+              <div className="border-t border-border px-4 py-3 bg-surface-secondary/60 max-h-60 overflow-y-auto">
                 {branch.messages.length === 0 ? (
                   <p className="text-xs text-text-secondary">暂无对话</p>
                 ) : (
@@ -65,7 +65,7 @@ export default function BranchSummaryCard({ branches }: BranchSummaryCardProps) 
                         {msg.role === 'user' ? (
                           <p className="text-xs font-medium text-brand">Q: {msg.content}</p>
                         ) : (
-                          <div className="prose prose-slate prose-xs max-w-none mt-1">
+                          <div className="prose prose-invert prose-xs max-w-none mt-1 prose-p:text-text-primary">
                             <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                               {preprocessLatex(msg.content)}
                             </ReactMarkdown>

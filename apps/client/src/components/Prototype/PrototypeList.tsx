@@ -45,8 +45,8 @@ export default function PrototypeList() {
         {/* Editorial Header */}
         <div className="mb-16">
           <div className="flex items-center gap-2 mb-4">
-            <span className="px-3 py-1 bg-purple-100 text-purple-600 text-[10px] font-bold uppercase tracking-wider rounded-full">
-              AI 原型
+            <span className="px-3 py-1 bg-brand/15 text-brand text-[10px] font-bold uppercase tracking-wider rounded-full">
+              造物台
             </span>
             {featured && (
               <>
@@ -57,14 +57,14 @@ export default function PrototypeList() {
           </div>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-5xl font-semibold text-text-primary tracking-tight leading-none mb-4">AI 原型</h1>
+              <h1 className="text-5xl font-semibold text-text-primary tracking-tight leading-none mb-4" style={{ fontFamily: '"Noto Serif SC", "Fraunces", Georgia, serif' }}>AI 原型</h1>
               <p className="text-lg text-text-secondary font-light max-w-xl leading-relaxed">
                 描述你的创意，AI 帮你生成可运行的原型代码
               </p>
             </div>
             <button
               onClick={handleCreate}
-              className="px-6 py-2.5 bg-purple-600 text-white rounded-full font-semibold text-sm hover:bg-purple-700 active:scale-95 transition-all duration-200 shadow-lg shadow-purple-600/20"
+              className="px-6 py-2.5 bg-brand text-surface-secondary rounded-full font-semibold text-sm hover:bg-brand-hover active:scale-95 transition-all duration-200 shadow-lg shadow-brand/20"
             >
               新建原型
             </button>
@@ -74,8 +74,8 @@ export default function PrototypeList() {
         {/* Empty state */}
         {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-20 h-20 rounded-full bg-purple-50 flex items-center justify-center mb-6">
-              <span className="material-symbols-outlined text-4xl text-purple-500">code</span>
+            <div className="w-20 h-20 rounded-full bg-brand/10 flex items-center justify-center mb-6">
+              <span className="material-symbols-outlined text-4xl text-brand">code</span>
             </div>
             <h2 className="text-xl font-semibold text-text-primary mb-2">创建你的第一个原型</h2>
             <p className="text-sm text-text-secondary mb-8 max-w-sm leading-relaxed">
@@ -83,7 +83,7 @@ export default function PrototypeList() {
             </p>
             <button
               onClick={handleCreate}
-              className="px-8 py-3 bg-purple-600 text-white text-sm font-semibold rounded-full hover:bg-purple-700 active:scale-95 transition-all duration-200 shadow-lg shadow-purple-600/20"
+              className="px-8 py-3 bg-brand text-surface-secondary text-sm font-semibold rounded-full hover:bg-brand-hover active:scale-95 transition-all duration-200 shadow-lg shadow-brand/20"
             >
               开始创建
             </button>
@@ -95,23 +95,23 @@ export default function PrototypeList() {
               {/* Featured Card */}
               <div
                 onClick={() => handleSelect(featured.id)}
-                className="col-span-8 bg-white p-10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-500 cursor-pointer group flex flex-col justify-between"
+                className="col-span-8 bg-surface p-10 rounded-2xl border border-border hover:border-brand/30 transition-all duration-500 cursor-pointer group flex flex-col justify-between"
               >
                 <div>
                   <div className="flex justify-between items-start mb-10">
-                    <span className="material-symbols-outlined text-4xl text-purple-500" style={{ fontVariationSettings: "'FILL' 1" }}>code_blocks</span>
+                    <span className="material-symbols-outlined text-4xl text-brand" style={{ fontVariationSettings: "'FILL' 1" }}>code_blocks</span>
                     <span className="material-symbols-outlined text-text-secondary/30 hover:text-text-secondary transition-colors">more_horiz</span>
                   </div>
-                  <h3 className="text-2xl font-semibold mb-3 leading-tight group-hover:text-purple-600 transition-colors">
+                  <h3 className="text-2xl font-semibold mb-3 leading-tight group-hover:text-brand transition-colors">
                     {featured.title || '未命名原型'}
                   </h3>
                   <p className="text-text-secondary text-base leading-relaxed">
                     最近编辑的原型，点击继续迭代
                   </p>
                 </div>
-                <div className="flex items-center justify-between pt-8 mt-8 border-t border-border/50">
+                <div className="flex items-center justify-between pt-8 mt-8 border-t border-border">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-500">
+                    <div className="w-10 h-10 rounded-full bg-brand/10 flex items-center justify-center text-brand">
                       <span className="material-symbols-outlined text-lg">chat</span>
                     </div>
                     <div>
@@ -127,12 +127,12 @@ export default function PrototypeList() {
               </div>
 
               {/* Stats Card */}
-              <div className="col-span-4 bg-surface-secondary rounded-2xl p-8 flex flex-col justify-between">
+              <div className="col-span-4 bg-surface rounded-2xl p-8 flex flex-col justify-between border border-border">
                 <div>
                   <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-secondary/60 mb-4">原型总数</h4>
                   <div className="flex items-baseline gap-2">
                     <span className="text-5xl font-semibold tracking-tighter text-text-primary">{sessions.length}</span>
-                    <span className="text-purple-500 font-medium text-sm">个</span>
+                    <span className="text-brand font-medium text-sm">个</span>
                   </div>
                 </div>
                 {/* Decorative bars */}
@@ -143,7 +143,7 @@ export default function PrototypeList() {
                     return (
                       <div
                         key={i}
-                        className={`flex-1 rounded-t-full ${isLast ? 'bg-purple-500' : 'bg-purple-200'}`}
+                        className={`flex-1 rounded-t-full ${isLast ? 'bg-brand' : 'bg-brand/20'}`}
                         style={{ height: `${heights[i]}%` }}
                       />
                     )
@@ -161,14 +161,14 @@ export default function PrototypeList() {
                     <button
                       key={session.id}
                       onClick={() => handleSelect(session.id)}
-                      className="w-full text-left bg-white p-5 rounded-xl flex items-center justify-between hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)] transition-all duration-300 group"
+                      className="w-full text-left bg-surface p-5 rounded-xl border border-border flex items-center justify-between hover:border-brand/30 transition-all duration-300 group"
                     >
                       <div className="flex items-center gap-5">
-                        <div className="w-11 h-11 rounded-full bg-surface-secondary flex items-center justify-center shrink-0">
+                        <div className="w-11 h-11 rounded-full bg-surface-secondary border border-border flex items-center justify-center shrink-0">
                           <span className="material-symbols-outlined text-text-secondary/50">code</span>
                         </div>
                         <div>
-                          <h5 className="text-base font-medium text-text-primary group-hover:text-purple-600 transition-colors">
+                          <h5 className="text-base font-medium text-text-primary group-hover:text-brand transition-colors">
                             {session.title || '未命名原型'}
                           </h5>
                           <p className="text-xs text-text-secondary mt-0.5">{formatDate(session.updatedAt)}</p>

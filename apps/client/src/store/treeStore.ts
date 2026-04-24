@@ -13,6 +13,7 @@ interface TreeStore {
   loadTrees: () => Promise<void>
   loadTree: (treeId: string) => Promise<void>
   createTree: (firstQuestion: string) => Promise<{ tree: Tree; rootNode: TreeNode }>
+  deleteTree: (treeId: string) => Promise<void>
   createNode: (parentId: string, selectedText: string | null) => Promise<TreeNode>
   addMessage: (nodeId: string, message: ChatMessage) => Promise<void>
   updateLastMessage: (nodeId: string, content: string) => Promise<void>
@@ -65,6 +66,23 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
       currentNodeId: rootNode.id,
     }))
     return { tree, rootNode }
+  },
+
+  deleteTree: async (treeId: string) => {
+    // Remove the tree row and every node that belongs to it in a single transaction.
+    await db.transaction('rw', db.trees, db.nodes, async () => {
+      await db.trees.delete(treeId)
+      await db.nodes.where('treeId').equals(treeId).delete()
+    })
+    set(state => {
+      const wasCurrent = state.currentTreeId === treeId
+      return {
+        trees: state.trees.filter(t => t.id !== treeId),
+        nodes: wasCurrent ? [] : state.nodes.filter(n => n.treeId !== treeId),
+        currentTreeId: wasCurrent ? null : state.currentTreeId,
+        currentNodeId: wasCurrent ? null : state.currentNodeId,
+      }
+    })
   },
 
   createNode: async (parentId: string, selectedText: string | null) => {

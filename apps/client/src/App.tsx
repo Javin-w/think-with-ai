@@ -1,18 +1,30 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import TreeList from './components/TreeList/TreeList'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Homepage from './components/Homepage/Homepage'
-import Sidebar from './components/Sidebar/Sidebar'
-import TreeNavPanel from './components/KnowledgeTree/TreeNavPanel'
-import BranchConversationPanel from './components/KnowledgeTree/BranchConversationPanel'
-import AnnotationsPanel from './components/KnowledgeTree/AnnotationsPanel'
-import TreeMapFloat from './components/KnowledgeTree/TreeMapFloat'
+import SideRail from './components/Shell/SideRail'
 import { useTreeStore } from './store/treeStore'
 import { useAppStore } from './store/appStore'
 import { useNodeStream } from './hooks/useNodeStream'
 import { useOnboarding } from './hooks/useOnboarding'
-import PrototypeModule from './components/Prototype/PrototypeModule'
-import PrototypeList from './components/Prototype/PrototypeList'
-import NewsModule from './components/News/NewsModule'
+
+// Heavy route components are loaded on-demand so the homepage bundle stays small.
+// Modules pulling xyflow / react-markdown / highlight.js / katex only ship when
+// the user navigates into thinking-tree / prototype / news.
+const TreeList = lazy(() => import('./components/TreeList/TreeList'))
+const TreeNavPanel = lazy(() => import('./components/KnowledgeTree/TreeNavPanel'))
+const BranchConversationPanel = lazy(() => import('./components/KnowledgeTree/BranchConversationPanel'))
+const AnnotationsPanel = lazy(() => import('./components/KnowledgeTree/AnnotationsPanel'))
+const TreeMapFloat = lazy(() => import('./components/KnowledgeTree/TreeMapFloat'))
+const PrototypeModule = lazy(() => import('./components/Prototype/PrototypeModule'))
+const PrototypeList = lazy(() => import('./components/Prototype/PrototypeList'))
+const NewsModule = lazy(() => import('./components/News/NewsModule'))
+
+function RouteFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center text-text-secondary text-sm">
+      <span className="opacity-60">加载中…</span>
+    </div>
+  )
+}
 
 function App() {
   const {
@@ -129,10 +141,6 @@ function App() {
     inputAutoFocusRef.current = true
   }
 
-  const handleBackToList = () => {
-    useAppStore.getState().goBack()
-  }
-
   const handleSend = async (message: string, images?: string[]) => {
     if (!currentNodeId) {
       const { rootNode } = await createTree(message)
@@ -158,56 +166,88 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'home':
+        // Homepage renders its own full-width SideRail internally
         return <Homepage />
 
       case 'news':
-        return <NewsModule />
+        return (
+          <div className="flex h-screen bg-surface-secondary">
+            <SideRail />
+            <main className="flex-1 overflow-hidden">
+              <Suspense fallback={<RouteFallback />}><NewsModule /></Suspense>
+            </main>
+          </div>
+        )
 
       case 'prototype-list':
-        return <PrototypeList />
+        return (
+          <div className="flex h-screen bg-surface-secondary">
+            <SideRail />
+            <main className="flex-1 overflow-hidden">
+              <Suspense fallback={<RouteFallback />}><PrototypeList /></Suspense>
+            </main>
+          </div>
+        )
 
       case 'prototype':
-        return <PrototypeModule />
+        return (
+          <div className="flex h-screen bg-surface-secondary">
+            <SideRail compact />
+            <main className="flex-1 overflow-hidden">
+              <Suspense fallback={<RouteFallback />}><PrototypeModule /></Suspense>
+            </main>
+          </div>
+        )
 
       case 'thinking-list':
         return (
-          <TreeList
-            trees={trees}
-            onSelectTree={handleSelectTree}
-            onCreateTree={handleCreateTree}
-          />
+          <div className="flex h-screen bg-surface-secondary">
+            <SideRail />
+            <main className="flex-1 overflow-hidden">
+              <Suspense fallback={<RouteFallback />}>
+                <TreeList
+                  trees={trees}
+                  onSelectTree={handleSelectTree}
+                  onCreateTree={handleCreateTree}
+                />
+              </Suspense>
+            </main>
+          </div>
         )
 
       case 'thinking-tree':
         return (
-          <div className="flex h-screen relative">
-            <TreeNavPanel treeId={currentTreeId} onBack={handleBackToList} mapOpen={mapFloatOpen} onToggleMap={toggleMapFloat} />
-            <BranchConversationPanel
-              nodeId={currentNodeId}
-              onSend={handleSend}
-              onBranch={handleBranch}
-              onAnnotate={handleAnnotate}
-              onHighlightClick={handleHighlightClick}
-              activeAnnotationId={activeAnnotationId}
-              isStreaming={isStreaming}
-            />
-            {mapFloatOpen && <TreeMapFloat treeId={currentTreeId} onClose={toggleMapFloat} />}
-            <AnnotationsPanel
-              nodeId={currentNodeId}
-              pendingAnnotation={pendingAnnotation}
-              onPendingClear={() => setPendingAnnotation(null)}
-              onAnnotationClick={handleAnnotationClick}
-              activeAnnotationId={activeAnnotationId}
-              collapsed={annotationsPanelCollapsed}
-              onCollapsedChange={setAnnotationsPanelCollapsed}
-            />
+          <div className="flex h-screen relative bg-surface-secondary">
+            <SideRail compact />
+            <Suspense fallback={<RouteFallback />}>
+              <TreeNavPanel treeId={currentTreeId} mapOpen={mapFloatOpen} onToggleMap={toggleMapFloat} />
+              <BranchConversationPanel
+                nodeId={currentNodeId}
+                onSend={handleSend}
+                onBranch={handleBranch}
+                onAnnotate={handleAnnotate}
+                onHighlightClick={handleHighlightClick}
+                activeAnnotationId={activeAnnotationId}
+                isStreaming={isStreaming}
+              />
+              {mapFloatOpen && <TreeMapFloat treeId={currentTreeId} onClose={toggleMapFloat} />}
+              <AnnotationsPanel
+                nodeId={currentNodeId}
+                pendingAnnotation={pendingAnnotation}
+                onPendingClear={() => setPendingAnnotation(null)}
+                onAnnotationClick={handleAnnotationClick}
+                activeAnnotationId={activeAnnotationId}
+                collapsed={annotationsPanelCollapsed}
+                onCollapsedChange={setAnnotationsPanelCollapsed}
+              />
+            </Suspense>
 
             {/* Onboarding: branch tip tooltip */}
             {showBranchTip && (
               <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-                <div className="bg-text-primary text-white text-sm px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-3 whitespace-nowrap">
+                <div className="bg-surface text-text-primary text-sm px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-3 whitespace-nowrap border border-border">
                   <span>试试选中上方回答中感兴趣的文字，展开新的知识分支</span>
-                  <button onClick={dismissBranchTip} className="text-white/50 hover:text-white shrink-0 text-xs">✕</button>
+                  <button onClick={dismissBranchTip} className="text-text-secondary hover:text-text-primary shrink-0 text-xs">✕</button>
                 </div>
               </div>
             )}
@@ -215,7 +255,7 @@ function App() {
             {/* Onboarding: first branch celebration */}
             {showBranchCelebration && (
               <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-                <div className="bg-brand text-white text-sm px-5 py-2.5 rounded-xl shadow-lg">
+                <div className="bg-brand text-surface-secondary text-sm px-5 py-2.5 rounded-xl shadow-lg">
                   你创建了第一个知识分支！继续探索，构建你的对话树
                 </div>
               </div>
@@ -228,17 +268,7 @@ function App() {
     }
   }
 
-  // thinking-tree and prototype use full width without sidebar
-  const isFullWidth = currentView === 'thinking-tree' || currentView === 'prototype'
-
-  return isFullWidth ? (
-    <div className="h-screen">{renderView()}</div>
-  ) : (
-    <div className="flex h-screen bg-surface">
-      <Sidebar />
-      <main className="flex-1 overflow-hidden bg-surface-secondary rounded-tl-2xl">{renderView()}</main>
-    </div>
-  )
+  return <div className="h-screen bg-surface-secondary">{renderView()}</div>
 }
 
 export default App

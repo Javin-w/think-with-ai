@@ -78,8 +78,8 @@ function ActivityTimeline({ activities, isRunning, elapsed }: { activities: Agen
 
   return (
     <div className="flex gap-4 items-start">
-      <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shrink-0 ${isRunning ? 'animate-pulse' : ''}`}>
-        <span className="material-symbols-outlined text-white text-sm">smart_toy</span>
+      <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-brand to-brand-hover flex items-center justify-center shrink-0 ${isRunning ? 'animate-pulse' : ''}`}>
+        <span className="material-symbols-outlined text-surface-secondary text-sm">smart_toy</span>
       </div>
       <div className="flex-1 min-w-0">
         {/* Header */}
@@ -103,7 +103,7 @@ function ActivityTimeline({ activities, isRunning, elapsed }: { activities: Agen
 
         {/* Activity items */}
         {(isRunning || !collapsed) && (
-          <div className="space-y-1.5 pl-0.5 border-l border-gray-100 ml-0.5">
+          <div className="space-y-1.5 pl-0.5 border-l border-border ml-0.5">
             {activities.map((act, i) => (
               <div key={act.id} className="pl-3">
                 <ActivityItem
@@ -224,8 +224,8 @@ export default function AgentChatPanel({
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-8 pb-40 space-y-8">
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/20">
-              <span className="material-symbols-outlined text-white text-xl">smart_toy</span>
+            <div className="w-12 h-12 rounded-full bg-brand/15 border border-brand/40 flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-brand text-xl">smart_toy</span>
             </div>
             <p className="text-base text-text-primary/80 font-medium max-w-xs leading-relaxed">
               描述你的产品需求，我会帮你生成可交互的原型
@@ -248,8 +248,8 @@ export default function AgentChatPanel({
                   <div>
                     {msg.role === 'assistant' ? (
                       <div className="flex gap-4 items-start">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center shrink-0 shadow-lg shadow-purple-500/10">
-                          <span className="material-symbols-outlined text-white text-sm">smart_toy</span>
+                        <div className="w-8 h-8 rounded-full bg-brand/15 border border-brand/40 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-brand text-sm">smart_toy</span>
                         </div>
                         <div className="max-w-[85%]">
                           <p className="text-[15px] leading-relaxed text-text-primary/90 whitespace-pre-wrap">
@@ -259,7 +259,7 @@ export default function AgentChatPanel({
                       </div>
                     ) : (
                       <div className="flex justify-end">
-                        <div className="bg-[#f2f4f6] px-6 py-4 rounded-2xl max-w-[85%]">
+                        <div className="bg-brand/15 border border-brand/20 px-6 py-4 rounded-2xl max-w-[85%]">
                           {msg.images && msg.images.length > 0 && (
                             <div className="flex gap-2 mb-2">
                               {msg.images.map((src, i) => (
@@ -280,7 +280,7 @@ export default function AgentChatPanel({
 
             {/* Error */}
             {error && (
-              <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+              <div className="px-4 py-3 bg-rust/10 border border-rust/30 rounded-xl text-xs text-rust">
                 {error}
               </div>
             )}
@@ -296,13 +296,13 @@ export default function AgentChatPanel({
       {/* Floating input bar */}
       <div className="absolute bottom-0 left-0 w-full p-6">
         <div
-          className="bg-white/80 backdrop-blur-2xl rounded-2xl p-3 flex items-center gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-200/50"
+          className="bg-surface/90 backdrop-blur-2xl rounded-2xl p-3 flex items-center gap-3 shadow-[0_8px_30px_rgba(0,0,0,0.35)] border border-border"
           onDrop={handleDrop}
           onDragOver={e => e.preventDefault()}
         >
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary/40 hover:bg-gray-100 transition-colors shrink-0"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary/60 hover:bg-surface-secondary transition-colors shrink-0"
           >
             <Plus size={20} strokeWidth={1.5} />
           </button>
@@ -341,8 +341,8 @@ export default function AgentChatPanel({
             disabled={isRunning || !hasContent}
             className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-all ${
               hasContent && !isRunning
-                ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 active:scale-95'
-                : 'bg-gray-100 text-text-secondary/30'
+                ? 'bg-brand text-surface-secondary shadow-lg shadow-brand/25 hover:bg-brand-hover active:scale-95'
+                : 'bg-surface-secondary text-text-muted border border-border'
             }`}
           >
             <span className="material-symbols-outlined text-lg">arrow_upward</span>

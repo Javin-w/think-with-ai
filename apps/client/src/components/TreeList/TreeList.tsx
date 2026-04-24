@@ -1,4 +1,5 @@
 import type { Tree } from '@repo/types'
+import { useTreeStore } from '../../store/treeStore'
 
 interface TreeListProps {
   trees: Tree[]
@@ -23,8 +24,16 @@ function timeAgo(timestamp: number): string {
 }
 
 export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeListProps) {
+  const deleteTree = useTreeStore(s => s.deleteTree)
   const featured = trees[0]
   const rest = trees.slice(1)
+
+  const handleDelete = (tree: Tree) => async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const name = tree.title || '未命名对话树'
+    if (!window.confirm(`确定删除「${name}」吗？该树下所有节点和对话都会一并删除，无法恢复。`)) return
+    await deleteTree(tree.id)
+  }
 
   return (
     <div className="h-full overflow-y-auto bg-surface-secondary">
@@ -51,7 +60,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
             </div>
             <button
               onClick={onCreateTree}
-              className="px-6 py-2.5 bg-brand text-white rounded-full font-semibold text-sm hover:bg-brand-hover active:scale-95 transition-all duration-200 shadow-lg shadow-brand/20"
+              className="px-6 py-2.5 bg-brand text-surface-secondary rounded-full font-semibold text-sm hover:bg-brand-hover active:scale-95 transition-all duration-200 shadow-lg shadow-brand/20"
             >
               新建对话树
             </button>
@@ -71,7 +80,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
             <button
               onClick={onCreateTree}
               data-testid="create-tree-cta"
-              className="px-8 py-3 bg-brand text-white text-sm font-semibold rounded-full hover:bg-brand-hover active:scale-95 transition-all duration-200 shadow-lg shadow-brand/20"
+              className="px-8 py-3 bg-brand text-surface-secondary text-sm font-semibold rounded-full hover:bg-brand-hover active:scale-95 transition-all duration-200 shadow-lg shadow-brand/20"
             >
               开始探索
             </button>
@@ -83,12 +92,18 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
               {/* Featured Card */}
               <div
                 onClick={() => onSelectTree(featured.id)}
-                className="col-span-8 bg-white p-10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-500 cursor-pointer group flex flex-col justify-between"
+                className="col-span-8 bg-surface p-10 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] transition-all duration-500 cursor-pointer group flex flex-col justify-between"
               >
                 <div>
                   <div className="flex justify-between items-start mb-10">
                     <span className="material-symbols-outlined text-4xl text-brand" style={{ fontVariationSettings: "'FILL' 1" }}>account_tree</span>
-                    <span className="material-symbols-outlined text-text-secondary/30 hover:text-text-secondary transition-colors">more_horiz</span>
+                    <button
+                      onClick={handleDelete(featured)}
+                      title="删除此对话树"
+                      className="material-symbols-outlined text-text-secondary/30 hover:text-rust transition-colors bg-transparent border-none cursor-pointer"
+                    >
+                      delete
+                    </button>
                   </div>
                   <h3 className="text-2xl font-semibold mb-3 leading-tight group-hover:text-brand transition-colors">
                     {featured.title || '未命名对话树'}
@@ -115,7 +130,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
               </div>
 
               {/* Stats Card */}
-              <div className="col-span-4 bg-surface-secondary rounded-2xl p-8 flex flex-col justify-between">
+              <div className="col-span-4 bg-surface rounded-2xl p-8 flex flex-col justify-between">
                 <div>
                   <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-secondary/60 mb-4">对话树总数</h4>
                   <div className="flex items-baseline gap-2">
@@ -146,13 +161,15 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
                 <h3 className="text-xl font-semibold text-text-primary mb-6">最近探索</h3>
                 <div className="space-y-3">
                   {rest.map(tree => (
-                    <button
+                    <div
                       key={tree.id}
                       onClick={() => onSelectTree(tree.id)}
-                      className="w-full text-left bg-white p-5 rounded-xl flex items-center justify-between hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)] transition-all duration-300 group"
+                      role="button"
+                      tabIndex={0}
+                      className="w-full text-left bg-surface p-5 rounded-xl flex items-center justify-between hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)] transition-all duration-300 group cursor-pointer"
                     >
                       <div className="flex items-center gap-5">
-                        <div className="w-11 h-11 rounded-full bg-surface-secondary flex items-center justify-center shrink-0">
+                        <div className="w-11 h-11 rounded-full bg-surface-secondary border border-border flex items-center justify-center shrink-0">
                           <span className="material-symbols-outlined text-text-secondary/50">psychology</span>
                         </div>
                         <div>
@@ -162,8 +179,17 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
                           <p className="text-xs text-text-secondary mt-0.5">{formatDate(tree.updatedAt)}</p>
                         </div>
                       </div>
-                      <span className="material-symbols-outlined text-text-secondary/20 group-hover:text-text-secondary/50 transition-colors">chevron_right</span>
-                    </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={handleDelete(tree)}
+                          title="删除此对话树"
+                          className="material-symbols-outlined text-text-secondary/0 group-hover:text-text-secondary/60 hover:!text-rust transition-colors bg-transparent border-none cursor-pointer"
+                        >
+                          delete
+                        </button>
+                        <span className="material-symbols-outlined text-text-secondary/20 group-hover:text-text-secondary/50 transition-colors">chevron_right</span>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>

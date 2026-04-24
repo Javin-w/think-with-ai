@@ -13,7 +13,7 @@ export default function ParentQuoteCard({ nodeId }: ParentQuoteCardProps) {
   return (
     <button
       onClick={() => setCurrentNode(node.parentId!)}
-      className="w-full text-left border-l-2 border-slate-300 pl-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:border-brand transition-colors group"
+      className="w-full text-left border-l-2 border-border pl-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:border-brand transition-colors group"
     >
       <span className="text-[10px] uppercase tracking-wide text-text-secondary/60 group-hover:text-brand/60">
         展开自

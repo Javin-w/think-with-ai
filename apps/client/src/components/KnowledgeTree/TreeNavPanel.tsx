@@ -1,20 +1,17 @@
 import { useMemo, useState, useCallback } from 'react'
 import { PanelLeftClose, PanelLeftOpen, GitFork } from 'lucide-react'
-import { useAppStore } from '../../store/appStore'
 import { useTreeStore } from '../../store/treeStore'
 import { buildTreeStructure, getAncestorChain, serializeTreeForExport } from '../../store/treeUtils'
 import TreeNavNode from './TreeNavNode'
 
 interface TreeNavPanelProps {
   treeId: string | null
-  onBack: () => void
   mapOpen?: boolean
   onToggleMap?: () => void
 }
 
-export default function TreeNavPanel({ treeId, onBack, mapOpen, onToggleMap }: TreeNavPanelProps) {
+export default function TreeNavPanel({ treeId, mapOpen, onToggleMap }: TreeNavPanelProps) {
   const { nodes, currentNodeId, setCurrentNode, trees } = useTreeStore()
-  const { goHome } = useAppStore()
   const [collapsed, setCollapsed] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState<string | null>(null)
@@ -114,22 +111,12 @@ export default function TreeNavPanel({ treeId, onBack, mapOpen, onToggleMap }: T
   }
 
   return (
-    <div className="w-52 h-full border-r border-border/30 flex flex-col shrink-0">
+    <div className="w-52 h-full border-r border-border flex flex-col shrink-0 bg-surface">
       {/* Header */}
       <div className="px-3 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goHome}
-            className="w-5 h-5 bg-brand rounded flex items-center justify-center text-white font-bold text-[9px] hover:bg-brand-hover transition-colors shrink-0"
-            title="回到主页"
-          >
-            N
-          </button>
-          <div className="w-px h-3.5 bg-border/50" />
-          <span className="text-[11px] text-text-secondary/40 font-medium tracking-wide">
-            对话树
-          </span>
-        </div>
+        <span className="text-[11px] text-text-secondary/60 font-medium tracking-wide">
+          对话树
+        </span>
         <div className="flex items-center gap-1">
           {onToggleMap && (
             <button
@@ -189,13 +176,6 @@ export default function TreeNavPanel({ treeId, onBack, mapOpen, onToggleMap }: T
             {exporting ? '导出中...' : '导出文档'}
           </button>
         )}
-
-        <button
-          onClick={onBack}
-          className="w-full px-2 py-1 text-[11px] text-text-secondary/50 hover:text-text-secondary rounded transition-colors text-left"
-        >
-          ← 返回
-        </button>
       </div>
     </div>
   )

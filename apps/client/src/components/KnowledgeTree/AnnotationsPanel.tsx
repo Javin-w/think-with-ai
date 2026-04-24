@@ -83,7 +83,7 @@ export default function AnnotationsPanel({
       <div className="w-8 h-full flex flex-col items-center pt-3 shrink-0">
         <button
           onClick={() => setCollapsed(false)}
-          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+          className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium bg-brand text-surface-secondary hover:bg-brand-hover transition-colors"
           title="展开批注"
         >
           {annotations.length}
@@ -93,7 +93,7 @@ export default function AnnotationsPanel({
   }
 
   return (
-    <div className="w-72 h-full border-l border-border bg-surface-secondary flex flex-col shrink-0">
+    <div className="w-72 h-full border-l border-border bg-surface flex flex-col shrink-0">
       {/* Header */}
       <div className="px-3 py-3 border-b border-border flex items-center justify-between">
         <h3 className="text-sm font-semibold text-text-primary">
@@ -101,7 +101,7 @@ export default function AnnotationsPanel({
         </h3>
         <button
           onClick={() => setCollapsed(true)}
-          className="w-6 h-6 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-slate-100 rounded transition-colors text-xs"
+          className="w-6 h-6 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface-secondary rounded transition-colors text-xs"
           title="收起"
         >
           ▶
@@ -110,8 +110,8 @@ export default function AnnotationsPanel({
 
       {/* Pending annotation input */}
       {pendingAnnotation && (
-        <div className="px-3 py-3 border-b border-amber-200 bg-amber-50/50">
-          <div className="text-[10px] text-amber-600 font-medium mb-1">选中的文本</div>
+        <div className="px-3 py-3 border-b border-brand/40 bg-brand/5">
+          <div className="text-[10px] text-brand font-medium mb-1">选中的文本</div>
           <p className="text-xs text-text-secondary line-clamp-2 mb-2 leading-relaxed">
             "{pendingAnnotation.selectedText}"
           </p>
@@ -122,14 +122,14 @@ export default function AnnotationsPanel({
             onKeyDown={handleKeyDown}
             placeholder="写下你的批注..."
             rows={2}
-            className="w-full resize-none rounded border border-amber-200 bg-white px-2 py-1.5 text-xs text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-amber-400"
+            className="w-full resize-none rounded border border-brand/40 bg-surface-secondary px-2 py-1.5 text-xs text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-brand"
           />
           <div className="flex justify-between items-center mt-1.5">
             <span className="text-[10px] text-text-secondary">Enter 保存 · Esc 取消</span>
             <button
               onClick={handleSave}
               disabled={!inputValue.trim()}
-              className="px-2 py-0.5 bg-amber-500 text-white text-[10px] rounded font-medium hover:bg-amber-600 disabled:opacity-40 transition-colors"
+              className="px-2 py-0.5 bg-brand text-surface-secondary text-[10px] rounded font-medium hover:bg-brand-hover disabled:opacity-40 transition-colors"
             >
               保存
             </button>
@@ -152,12 +152,12 @@ export default function AnnotationsPanel({
               key={ann.id}
               data-panel-annotation-id={ann.id}
               onClick={() => onAnnotationClick?.(ann.id)}
-              className={`px-3 py-3 border-b border-border/50 cursor-pointer transition-colors group ${
-                isActive ? 'bg-yellow-50 ring-1 ring-yellow-300' : 'hover:bg-slate-50'
+              className={`px-3 py-3 border-b border-border cursor-pointer transition-colors group ${
+                isActive ? 'bg-brand/10 ring-1 ring-brand/40' : 'hover:bg-surface-secondary'
               }`}
             >
               {/* Quoted text */}
-              <p className="text-[11px] text-text-secondary border-l-2 border-amber-300 pl-2 line-clamp-2 leading-relaxed">
+              <p className="text-[11px] text-text-secondary border-l-2 border-brand/60 pl-2 line-clamp-2 leading-relaxed">
                 "{ann.selectedText}"
               </p>
               {/* User's note */}

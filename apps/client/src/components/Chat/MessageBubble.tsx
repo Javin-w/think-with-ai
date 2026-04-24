@@ -15,7 +15,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   if (message.role === 'user') {
     return (
       <div className="flex justify-end mb-4">
-        <div className="max-w-[80%] bg-slate-100 rounded-lg px-4 py-3 text-sm text-text-primary">
+        <div className="max-w-[80%] bg-brand/15 border border-brand/20 rounded-lg px-4 py-3 text-sm text-text-primary">
           {message.content}
         </div>
       </div>
@@ -26,9 +26,9 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     <div className="flex justify-start mb-4">
       <div
         data-testid="assistant-message"
-        className="max-w-[90%] bg-white border border-border rounded-lg px-4 py-3 text-sm text-text-primary"
+        className="max-w-[90%] bg-surface border border-border rounded-lg px-4 py-3 text-sm text-text-primary"
       >
-        <div className="prose prose-sm max-w-none">
+        <div className="prose prose-invert prose-sm max-w-none prose-p:text-text-primary prose-strong:text-text-primary prose-code:text-brand prose-a:text-brand">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeHighlight, rehypeKatex]}
@@ -38,7 +38,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                 if (isBlock) {
                   return (
                     <code
-                      className={`${className} font-mono text-sm bg-slate-50 rounded block p-3 overflow-x-auto`}
+                      className={`${className} font-mono text-sm bg-code-bg rounded block p-3 overflow-x-auto`}
                       {...props}
                     >
                       {children}
@@ -46,13 +46,13 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
                   )
                 }
                 return (
-                  <code className="font-mono text-sm bg-slate-100 rounded px-1" {...props}>
+                  <code className="font-mono text-sm bg-code-bg text-code-text rounded px-1" {...props}>
                     {children}
                   </code>
                 )
               },
               pre({ children }: any) {
-                return <pre className="bg-slate-50 rounded-lg overflow-x-auto my-2">{children}</pre>
+                return <pre className="bg-code-bg rounded-lg overflow-x-auto my-2">{children}</pre>
               },
             }}
           >

@@ -88,7 +88,7 @@ function treeNodesToFlow(treeNodes: TreeNode[], currentNodeId: string | null, an
       target: node.id,
       type: 'smoothstep',
       style: {
-        stroke: ancestorIds.has(node.id) ? '#3370FF' : '#e2e8f0',
+        stroke: ancestorIds.has(node.id) ? '#d4a574' : 'rgba(245,242,234,0.15)',
         strokeWidth: ancestorIds.has(node.id) ? 2 : 1.5,
       },
     }))
@@ -153,7 +153,7 @@ export default function TreeMapView({ treeId, compact }: TreeMapViewProps) {
         minZoom={compact ? 0.2 : 0.3}
         maxZoom={2}
       >
-        {!compact && <Background color="#e2e8f0" gap={20} size={1} />}
+        {!compact && <Background color="rgba(245,242,234,0.08)" gap={20} size={1} />}
       </ReactFlow>
     </div>
   )

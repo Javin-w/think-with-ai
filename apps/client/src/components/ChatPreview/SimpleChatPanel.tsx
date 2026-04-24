@@ -46,7 +46,7 @@ export default function SimpleChatPanel({
             {/* Streaming indicator */}
             {isStreaming && (
               <div className="flex justify-start mb-4">
-                <div className="bg-white border border-border rounded-lg px-4 py-3">
+                <div className="bg-surface border border-border rounded-lg px-4 py-3">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-2 h-2 bg-text-secondary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

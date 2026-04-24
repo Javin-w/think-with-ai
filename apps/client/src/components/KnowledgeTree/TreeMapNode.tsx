@@ -21,10 +21,10 @@ function TreeMapNode({ data }: { data: TreeMapNodeData }) {
         ${isCompact ? 'px-2 py-1 rounded-md text-[10px] max-w-[110px]' : 'px-3 py-2 rounded-lg text-xs max-w-[150px]'}
         cursor-pointer border transition-all duration-200
         ${data.isActive
-          ? 'border-brand bg-white shadow-md text-text-primary ring-2 ring-brand/30'
+          ? 'border-brand bg-surface shadow-md text-text-primary ring-2 ring-brand/30'
           : data.isOnPath
-            ? 'border-brand/40 bg-blue-50/50 text-text-primary'
-            : 'border-border bg-white text-text-secondary hover:border-brand/30 hover:text-text-primary'
+            ? 'border-brand/40 bg-brand/10 text-text-primary'
+            : 'border-border bg-surface text-text-secondary hover:border-brand/30 hover:text-text-primary'
         }
       `}
     >

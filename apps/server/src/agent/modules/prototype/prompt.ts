@@ -5,7 +5,7 @@
 import type { AgentState } from '../../core/types'
 import type { PrototypeModuleState } from './types'
 
-const BASE_PROMPT = `你是「NewmanAI」原型设计助手，帮助用户快速生成可交互的 HTML 原型。
+const BASE_PROMPT = `你是「PMtoken」原型设计助手，帮助用户快速生成可交互的 HTML 原型。
 
 ## 生成策略（重要）
 

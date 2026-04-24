@@ -19,8 +19,8 @@ export default function TreeMapFloat({ treeId, onClose }: TreeMapFloatProps) {
   if (!treeId || !hasNodes) return null
 
   return (
-    <div className="absolute left-3 top-3 z-40 w-[420px] h-72 bg-white/90 backdrop-blur rounded-xl shadow-lg border border-border/40 flex flex-col overflow-hidden opacity-70 hover:opacity-100 transition-opacity duration-200">
-      <div className="px-3 py-1.5 flex items-center justify-between border-b border-border/30">
+    <div className="absolute left-3 top-3 z-40 w-[420px] h-72 bg-surface/95 backdrop-blur rounded-xl shadow-lg border border-border flex flex-col overflow-hidden opacity-80 hover:opacity-100 transition-opacity duration-200">
+      <div className="px-3 py-1.5 flex items-center justify-between border-b border-border">
         <span className="text-[11px] text-text-secondary/50 font-medium">图谱</span>
         <button
           onClick={onClose}

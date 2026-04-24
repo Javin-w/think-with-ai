@@ -87,30 +87,30 @@ function IframePreviewInner({ htmlContent, onQuickEdit }: IframePreviewProps, re
 
   if (!htmlContent) {
     return (
-      <div className="w-full h-full bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center text-center space-y-6 overflow-hidden border border-gray-200/30 relative">
+      <div className="w-full h-full bg-surface rounded-2xl shadow-sm flex flex-col items-center justify-center text-center space-y-6 overflow-hidden border border-border relative">
         {/* Monitor icon */}
         <div className="relative w-48 h-32 flex flex-col items-center justify-center">
-          <div className="w-40 h-28 border-2 border-gray-200 rounded-xl flex items-center justify-center bg-gray-50/50">
-            <span className="material-symbols-outlined text-gray-200 text-4xl">desktop_windows</span>
+          <div className="w-40 h-28 border-2 border-border rounded-xl flex items-center justify-center bg-surface-secondary/50">
+            <span className="material-symbols-outlined text-text-muted text-4xl">desktop_windows</span>
           </div>
-          <div className="absolute -bottom-3 w-12 h-1 bg-gray-200 rounded-full" />
+          <div className="absolute -bottom-3 w-12 h-1 bg-border rounded-full" />
         </div>
         <div className="max-w-xs">
           <h3 className="text-text-primary font-semibold text-lg">你的原型将在这里渲染</h3>
           <p className="text-text-secondary text-sm mt-2">与左侧助手对话，开始生成代码</p>
         </div>
         {/* Decorative gradient */}
-        <div className="absolute bottom-12 right-12 opacity-20 pointer-events-none">
-          <div className="w-64 h-64 bg-gradient-to-tr from-blue-500/20 to-purple-500/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-12 right-12 opacity-30 pointer-events-none">
+          <div className="w-64 h-64 bg-gradient-to-tr from-brand/20 to-rust/20 rounded-full blur-[100px]" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-200/30 overflow-hidden">
+    <div className="flex flex-col h-full bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-gray-100 bg-white">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-surface">
         {/* Viewport presets */}
         <div className="flex items-center gap-1 mr-2">
           {VIEWPORT_PRESETS.map((preset) => (
@@ -119,8 +119,8 @@ function IframePreviewInner({ htmlContent, onQuickEdit }: IframePreviewProps, re
               onClick={() => setViewportWidth(preset.width)}
               className={`px-2 py-1 text-xs rounded transition-colors ${
                 viewportWidth === preset.width
-                  ? 'bg-brand text-white'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-gray-100'
+                  ? 'bg-brand text-surface-secondary'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
               }`}
               title={preset.name + (preset.width ? ` (${preset.width}px)` : '')}
             >
@@ -168,12 +168,12 @@ function IframePreviewInner({ htmlContent, onQuickEdit }: IframePreviewProps, re
       </div>
 
       {/* iframe container */}
-      <div className="flex-1 min-h-0 flex justify-center bg-gray-50">
+      <div className="flex-1 min-h-0 flex justify-center bg-surface-secondary">
         <div
           className="h-full bg-white transition-all duration-300"
           style={{
             width: viewportWidth > 0 ? `${viewportWidth}px` : '100%',
-            boxShadow: viewportWidth > 0 ? '0 0 20px rgba(0,0,0,0.1)' : 'none',
+            boxShadow: viewportWidth > 0 ? '0 0 20px rgba(0,0,0,0.45)' : 'none',
           }}
         >
           <iframe

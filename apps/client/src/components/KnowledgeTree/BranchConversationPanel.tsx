@@ -30,19 +30,19 @@ const markdownComponents = {
     const isBlock = className?.includes('language-')
     if (isBlock) {
       return (
-        <code className={`${className} font-mono text-[13px] bg-slate-50 rounded block p-4 overflow-x-auto`} {...props}>
+        <code className={`${className} font-mono text-[13px] bg-code-bg rounded block p-4 overflow-x-auto`} {...props}>
           {children}
         </code>
       )
     }
     return (
-      <code className="font-mono text-[13px] bg-slate-100 rounded px-1.5 py-0.5" {...props}>
+      <code className="font-mono text-[13px] bg-code-bg text-code-text rounded px-1.5 py-0.5" {...props}>
         {children}
       </code>
     )
   },
   pre({ children }: any) {
-    return <pre className="bg-slate-50 rounded-lg overflow-x-auto my-4">{children}</pre>
+    return <pre className="bg-code-bg rounded-lg overflow-x-auto my-4">{children}</pre>
   },
 }
 
@@ -78,8 +78,8 @@ function highlightAnnotations(text: string, annotations: Annotation[], onHighlig
     parts.push(
       <mark
         key={m.annotation.id}
-        className={`rounded-sm px-0.5 cursor-pointer transition-colors ${
-          isActive ? 'bg-yellow-300 animate-pulse' : 'bg-yellow-100/80 hover:bg-yellow-200'
+        className={`rounded-sm px-0.5 cursor-pointer transition-colors text-text-primary ${
+          isActive ? 'bg-brand/40 animate-pulse' : 'bg-brand/20 hover:bg-brand/30'
         }`}
         data-annotation-id={m.annotation.id}
         title={m.annotation.content}
@@ -135,7 +135,7 @@ function AssistantMessage({ message, onBranch, isStreaming, childBranches, annot
       <article
         data-testid="assistant-message"
         data-message-id={message.id}
-        className="prose prose-slate max-w-none prose-headings:font-semibold prose-p:leading-7 prose-p:text-text-primary prose-li:leading-7"
+        className="prose prose-invert max-w-none prose-headings:font-semibold prose-p:leading-7 prose-p:text-text-primary prose-li:leading-7 prose-strong:text-text-primary prose-a:text-brand prose-code:text-brand"
       >
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath]}
@@ -263,7 +263,7 @@ export default function BranchConversationPanel({
     ]
 
     return (
-      <div className="flex flex-col h-full flex-1">
+      <div className="flex flex-col h-full flex-1 bg-surface-secondary">
         <div className="flex-1 flex flex-col items-center justify-center px-8">
           <div className="text-center mb-10 max-w-md">
             {/* Tree branch illustration */}
@@ -317,10 +317,10 @@ export default function BranchConversationPanel({
   }
 
   return (
-    <div className="flex flex-col h-full flex-1">
+    <div className="flex flex-col h-full flex-1 bg-surface-secondary">
       {/* Header — only show for non-root nodes */}
       {!isRoot && (
-        <div className="px-6 py-3 border-b border-border/50 shrink-0">
+        <div className="px-6 py-3 border-b border-border shrink-0">
           <div className="max-w-2xl mx-auto">
             <Breadcrumb nodeId={nodeId} />
             <div className="mt-2">

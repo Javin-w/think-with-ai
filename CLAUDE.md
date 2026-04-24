@@ -213,10 +213,14 @@ ssh -i ~/.ssh/ecs_deploy root@47.111.169.246
 # 1. 本地构建
 pnpm build
 
-# 2. 打包上传（排除 node_modules / .env / .git 等）
+# 2. 打包上传（排除 node_modules / .env / .git / e2e 产物 等）
+# ⚠️ e2e-reports、e2e-screenshots、log、screenshot.png 是本地调试产物，跟生产无关，
+#    曾经漏 exclude 导致包膨胀到 75M+（正常应在 3~5M）
 tar czf /tmp/think-with-ai.tar.gz \
   --exclude=node_modules --exclude=.env --exclude=.git \
   --exclude=.worktrees --exclude=.superpowers \
+  --exclude=e2e-reports --exclude=e2e-screenshots \
+  --exclude=log --exclude=screenshot.png \
   -C /Users/bytedance/Desktop think_with_ai
 
 # scp 必须前台阻塞跑（不要后台化，否则容易多进程并发写同一文件导致损坏）

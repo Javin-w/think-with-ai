@@ -44,7 +44,8 @@ news.get('/today', async (c) => {
     '社媒分享': 'social',
     '社媒热议': 'social',
   }
-  const categoryHeadlines: Array<{ category: string; title: string; items: string[] }> = []
+  interface CategoryItem { title: string; excerpt: string }
+  const categoryHeadlines: Array<{ category: string; title: string; items: CategoryItem[] }> = []
   // Split content by ### sections and extract titles from each
   const sectionRegex = /^###\s+(.+)/gm
   let sectionMatch: RegExpExecArray | null
@@ -58,16 +59,27 @@ news.get('/today', async (c) => {
     if (!categoryKey) continue
     const endIndex = i + 1 < sections.length ? sections[i + 1].startIndex : briefing.content.length
     const sectionContent = briefing.content.slice(sections[i].startIndex, endIndex)
-    // Extract all numbered bold titles (up to 3)
-    const allTitles: string[] = []
-    const titleRegex = /\d+\.\s+\*\*(.+?)[。！？.!?]?\*\*/g
-    let tm: RegExpExecArray | null
-    while ((tm = titleRegex.exec(sectionContent)) !== null && allTitles.length < 3) {
-      const t = tm[1].replace(/[。！？.!?]$/, '').trim()
-      if (t.length > 4) allTitles.push(t)
+    // Extract each numbered bold item with both its title and the body paragraph that follows.
+    const items: CategoryItem[] = []
+    // Split into chunks beginning at every "1. **", "2. **", …; each chunk =  title + excerpt
+    const chunks = sectionContent.split(/(?=(?:^|\n)\s*\d+\.\s+\*\*)/).filter(c => c.trim())
+    for (const chunk of chunks) {
+      const m = chunk.match(/\d+\.\s+\*\*(.+?)[。！？.!?]?\*\*[。.．·]?\s*([\s\S]*)/)
+      if (!m) continue
+      const title = m[1].replace(/[。！？.!?]$/, '').trim()
+      if (title.length <= 4) continue
+      const excerpt = m[2]
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // markdown links → text
+        .replace(/\*\*/g, '')
+        .replace(/\*/g, '')
+        .replace(/`/g, '')
+        .replace(/\n+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      items.push({ title, excerpt })
     }
-    if (allTitles.length > 0) {
-      categoryHeadlines.push({ category: CATEGORY_MAP[categoryKey], title: allTitles[0], items: allTitles })
+    if (items.length > 0) {
+      categoryHeadlines.push({ category: CATEGORY_MAP[categoryKey], title: items[0].title, items })
     }
   }
 

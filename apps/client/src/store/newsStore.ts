@@ -11,10 +11,15 @@ interface BriefingFull extends BriefingSummary {
   content: string
 }
 
+export interface CategoryItem {
+  title: string
+  excerpt: string
+}
+
 export interface CategoryHeadline {
   category: string
   title: string
-  items?: string[]
+  items?: CategoryItem[]
 }
 
 interface NewsStore {
@@ -23,6 +28,9 @@ interface NewsStore {
   isLoading: boolean
   error: string | null
   isFetching: boolean
+  /** In-flight flag for fetchToday — Homepage uses this to show a local skeleton
+   *  instead of blocking the whole page on the /api/news/today cold start. */
+  todayLoading: boolean
   todaySummary: string | null
   todayKeywords: string[] | null
   todayCategoryHeadlines: CategoryHeadline[] | null
@@ -40,6 +48,7 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
   isLoading: false,
   isFetching: false,
   error: null,
+  todayLoading: false,
   todaySummary: null,
   todayKeywords: null,
   todayCategoryHeadlines: null,
@@ -100,6 +109,7 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
   },
 
   fetchToday: async () => {
+    set({ todayLoading: true })
     try {
       const res = await fetch('/api/news/today')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -107,6 +117,8 @@ export const useNewsStore = create<NewsStore>((set, get) => ({
       set({ todaySummary: data.summary, todayKeywords: data.keywords, todayCategoryHeadlines: data.categoryHeadlines || null })
     } catch {
       // silent fail — homepage modules just won't show
+    } finally {
+      set({ todayLoading: false })
     }
   },
 

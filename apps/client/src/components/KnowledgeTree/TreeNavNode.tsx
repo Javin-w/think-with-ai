@@ -29,8 +29,8 @@ export default function TreeNavNode({ item, currentNodeId, onSelect, depth, defa
           flex items-center gap-1 cursor-pointer transition-colors rounded-md mx-2
           ${isRoot ? 'py-1.5 text-[12px]' : 'py-[5px] text-[11px]'}
           ${isActive
-            ? 'text-text-primary bg-slate-100'
-            : 'text-text-secondary/70 hover:text-text-secondary hover:bg-slate-50'
+            ? 'text-brand bg-brand/10'
+            : 'text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
           }
         `}
         style={{ paddingLeft: `${depth * 14 + 8}px`, paddingRight: '8px' }}
