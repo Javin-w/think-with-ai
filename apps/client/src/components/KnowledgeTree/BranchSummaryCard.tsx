@@ -6,12 +6,7 @@ import rehypeKatex from 'rehype-katex'
 import type { TreeNode } from '@repo/types'
 import { useTreeStore } from '../../store/treeStore'
 import { getNodeLabel } from '../../store/treeUtils'
-
-function preprocessLatex(content: string): string {
-  return content
-    .replace(/\\\[([\s\S]*?)\\\]/g, '\n$$\n$1\n$$\n')
-    .replace(/\\\(([\s\S]*?)\\\)/g, ' $$$1$$ ')
-}
+import { preprocessLatex } from '../../utils/preprocessLatex'
 
 interface BranchSummaryCardProps {
   branches: TreeNode[]

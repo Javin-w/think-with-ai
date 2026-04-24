@@ -4,7 +4,7 @@ import { createModelInstance } from '../providers'
 
 const exportRoute = new Hono()
 
-const SUMMARY_PROMPT = `你是一个知识整理专家。用户会给你一棵知识树的完整对话内容（包含主线和分支），请将其总结归纳为一篇结构清晰的文档。
+const SUMMARY_PROMPT = `你是一个知识整理专家。用户会给你一棵对话树的完整对话内容（包含主线和分支），请将其总结归纳为一篇结构清晰的文档。
 
 要求：
 - 使用 Markdown 格式
@@ -61,7 +61,7 @@ exportRoute.post('/summary', async (c) => {
 
   // Convert tree to readable text
   const treeText = treeToText(treeData)
-  const userMessage = `以下是一棵知识树的完整对话内容，标题是「${title}」。请将其整理为一篇结构化文档：\n\n${treeText}`
+  const userMessage = `以下是一棵对话树的完整对话内容，标题是「${title}」。请将其整理为一篇结构化文档：\n\n${treeText}`
 
   try {
     const result = await generateText({

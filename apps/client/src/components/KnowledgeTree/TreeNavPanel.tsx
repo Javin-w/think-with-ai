@@ -8,12 +8,11 @@ import TreeNavNode from './TreeNavNode'
 interface TreeNavPanelProps {
   treeId: string | null
   onBack: () => void
-  onExportLark?: (markdown: string, title: string) => void
   mapOpen?: boolean
   onToggleMap?: () => void
 }
 
-export default function TreeNavPanel({ treeId, onBack, onExportLark, mapOpen, onToggleMap }: TreeNavPanelProps) {
+export default function TreeNavPanel({ treeId, onBack, mapOpen, onToggleMap }: TreeNavPanelProps) {
   const { nodes, currentNodeId, setCurrentNode, trees } = useTreeStore()
   const { goHome } = useAppStore()
   const [collapsed, setCollapsed] = useState(false)
@@ -56,7 +55,7 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark, mapOpen, on
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           treeData,
-          title: tree?.title || '知识树',
+          title: tree?.title || '对话树',
         }),
       })
 
@@ -66,14 +65,21 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark, mapOpen, on
       }
 
       const { markdown } = await response.json()
-      setExportStatus('正在创建飞书文档...')
 
-      if (onExportLark) {
-        onExportLark(markdown, tree?.title || '知识树')
-      } else {
-        await navigator.clipboard.writeText(markdown)
-        setExportStatus('已复制 Markdown 到剪贴板')
-      }
+      const rawTitle = tree?.title || '对话树'
+      const safeTitle = rawTitle.replace(/[\\/:*?"<>|%]/g, '_').trim() || '对话树'
+
+      const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${safeTitle}.md`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      setExportStatus('已下载到本地')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '导出失败'
       setExportStatus(`导出失败: ${msg}`)
@@ -81,7 +87,7 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark, mapOpen, on
       setExporting(false)
       setTimeout(() => setExportStatus(null), 3000)
     }
-  }, [treeId, currentTreeNodes, tree, exporting, onExportLark])
+  }, [treeId, currentTreeNodes, tree, exporting])
 
   // Collapsed
   if (collapsed) {
@@ -121,7 +127,7 @@ export default function TreeNavPanel({ treeId, onBack, onExportLark, mapOpen, on
           </button>
           <div className="w-px h-3.5 bg-border/50" />
           <span className="text-[11px] text-text-secondary/40 font-medium tracking-wide">
-            知识树
+            对话树
           </span>
         </div>
         <div className="flex items-center gap-1">

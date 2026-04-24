@@ -33,7 +33,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
         <div className="mb-16">
           <div className="flex items-center gap-2 mb-4">
             <span className="px-3 py-1 bg-brand/10 text-brand text-[10px] font-bold uppercase tracking-wider rounded-full">
-              知识树
+              对话树
             </span>
             {featured && (
               <>
@@ -44,7 +44,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
           </div>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-5xl font-semibold text-text-primary tracking-tight leading-none mb-4">知识树</h1>
+              <h1 className="text-5xl font-semibold text-text-primary tracking-tight leading-none mb-4">对话树</h1>
               <p className="text-lg text-text-secondary font-light max-w-xl leading-relaxed">
                 选中 AI 回答中的任意概念，展开为新分支，构建你的知识图谱
               </p>
@@ -53,7 +53,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
               onClick={onCreateTree}
               className="px-6 py-2.5 bg-brand text-white rounded-full font-semibold text-sm hover:bg-brand-hover active:scale-95 transition-all duration-200 shadow-lg shadow-brand/20"
             >
-              新建知识树
+              新建对话树
             </button>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
             </div>
             <h2 className="text-xl font-semibold text-text-primary mb-2">开始你的第一次探索</h2>
             <p className="text-sm text-text-secondary mb-8 max-w-sm leading-relaxed">
-              提出一个问题，深入探索 AI 回答中的任意概念，构建属于你的知识树
+              提出一个问题，深入探索 AI 回答中的任意概念，构建属于你的对话树
             </p>
             <button
               onClick={onCreateTree}
@@ -91,10 +91,10 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
                     <span className="material-symbols-outlined text-text-secondary/30 hover:text-text-secondary transition-colors">more_horiz</span>
                   </div>
                   <h3 className="text-2xl font-semibold mb-3 leading-tight group-hover:text-brand transition-colors">
-                    {featured.title || '未命名知识树'}
+                    {featured.title || '未命名对话树'}
                   </h3>
                   <p className="text-text-secondary text-base leading-relaxed">
-                    最近编辑的知识树，点击继续探索
+                    最近编辑的对话树，点击继续探索
                   </p>
                 </div>
                 <div className="flex items-center justify-between pt-8 mt-8 border-t border-border/50">
@@ -117,7 +117,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
               {/* Stats Card */}
               <div className="col-span-4 bg-surface-secondary rounded-2xl p-8 flex flex-col justify-between">
                 <div>
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-secondary/60 mb-4">知识树总数</h4>
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-text-secondary/60 mb-4">对话树总数</h4>
                   <div className="flex items-baseline gap-2">
                     <span className="text-5xl font-semibold tracking-tighter text-text-primary">{trees.length}</span>
                     <span className="text-brand font-medium text-sm">棵</span>
@@ -157,7 +157,7 @@ export default function TreeList({ trees, onSelectTree, onCreateTree }: TreeList
                         </div>
                         <div>
                           <h5 className="text-base font-medium text-text-primary group-hover:text-brand transition-colors">
-                            {tree.title || '未命名知识树'}
+                            {tree.title || '未命名对话树'}
                           </h5>
                           <p className="text-xs text-text-secondary mt-0.5">{formatDate(tree.updatedAt)}</p>
                         </div>

@@ -5,12 +5,7 @@ import rehypeHighlight from 'rehype-highlight'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import type { ChatMessage } from '@repo/types'
-
-function preprocessLatex(content: string): string {
-  return content
-    .replace(/\\\[([\s\S]*?)\\\]/g, '\n$$\n$1\n$$\n')
-    .replace(/\\\(([\s\S]*?)\\\)/g, ' $$$1$$ ')
-}
+import { preprocessLatex } from '../../utils/preprocessLatex'
 
 interface MessageBubbleProps {
   message: ChatMessage

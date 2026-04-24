@@ -155,23 +155,6 @@ function App() {
     setPendingAnnotation({ selectedText, messageId })
   }
 
-  const handleExportLark = async (markdown: string, title: string) => {
-    try {
-      const res = await fetch('/api/export/lark', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markdown, title }),
-      })
-      if (!res.ok) throw new Error('飞书文档创建失败')
-      const data = await res.json()
-      if (data.url) {
-        window.open(data.url, '_blank')
-      }
-    } catch {
-      // Fallback: already copied to clipboard by TreeNavPanel
-    }
-  }
-
   const renderView = () => {
     switch (currentView) {
       case 'home':
@@ -198,7 +181,7 @@ function App() {
       case 'thinking-tree':
         return (
           <div className="flex h-screen relative">
-            <TreeNavPanel treeId={currentTreeId} onBack={handleBackToList} onExportLark={handleExportLark} mapOpen={mapFloatOpen} onToggleMap={toggleMapFloat} />
+            <TreeNavPanel treeId={currentTreeId} onBack={handleBackToList} mapOpen={mapFloatOpen} onToggleMap={toggleMapFloat} />
             <BranchConversationPanel
               nodeId={currentNodeId}
               onSend={handleSend}
@@ -233,7 +216,7 @@ function App() {
             {showBranchCelebration && (
               <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
                 <div className="bg-brand text-white text-sm px-5 py-2.5 rounded-xl shadow-lg">
-                  你创建了第一个知识分支！继续探索，构建你的知识树
+                  你创建了第一个知识分支！继续探索，构建你的对话树
                 </div>
               </div>
             )}

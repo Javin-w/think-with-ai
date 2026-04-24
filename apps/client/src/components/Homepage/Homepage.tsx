@@ -84,7 +84,7 @@ export default function Homepage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="flex-1 bg-transparent text-text-primary text-base font-light placeholder:text-text-primary/20 outline-none"
-                placeholder="输入任何主题，开始构建你的知识树..."
+                placeholder="输入任何主题，开始构建你的对话树..."
               />
               <button
                 onClick={() => handleSubmit()}
@@ -119,8 +119,8 @@ export default function Homepage() {
               <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-brand mb-5 transition-transform group-hover:scale-110">
                 <span className="material-symbols-outlined" style={{ fontSize: '28px', fontVariationSettings: "'FILL' 1" }}>account_tree</span>
               </div>
-              <h3 className="text-lg font-semibold text-text-primary mb-2">知识树</h3>
-              <p className="text-text-primary/40 text-sm leading-relaxed mb-5">选中 AI 回答中的任意概念，一键展开为新分支，把一个问题变成一棵知识树</p>
+              <h3 className="text-lg font-semibold text-text-primary mb-2">对话树</h3>
+              <p className="text-text-primary/40 text-sm leading-relaxed mb-5">选中 AI 回答中的任意概念，一键展开为新分支，把一个问题变成一棵对话树</p>
               <div className="flex items-center gap-1.5 text-brand font-semibold text-[10px] uppercase tracking-widest">
                 开始探索 <ArrowRight className="w-3 h-3" />
               </div>

@@ -13,6 +13,7 @@ import Breadcrumb from './Breadcrumb'
 import ParentQuoteCard from './ParentQuoteCard'
 import BranchTrigger from './BranchTrigger'
 import BranchSummaryCard from './BranchSummaryCard'
+import { preprocessLatex } from '../../utils/preprocessLatex'
 
 interface BranchConversationPanelProps {
   nodeId: string | null
@@ -22,13 +23,6 @@ interface BranchConversationPanelProps {
   onHighlightClick?: (annotationId: string) => void
   activeAnnotationId?: string | null
   isStreaming: boolean
-}
-
-/** Convert \[...\] → $$...$$ and \(...\) → $...$ for remark-math */
-function preprocessLatex(content: string): string {
-  return content
-    .replace(/\\\[([\s\S]*?)\\\]/g, '\n$$\n$1\n$$\n')
-    .replace(/\\\(([\s\S]*?)\\\)/g, ' $$$1$$ ')
 }
 
 const markdownComponents = {
@@ -295,7 +289,7 @@ export default function BranchConversationPanel({
                 <text x="180" y="23" textAnchor="middle" fill="currentColor" fontSize="8" opacity="0.4">...</text>
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-text-primary mb-2 tracking-tight">开始构建你的知识树</h2>
+            <h2 className="text-xl font-semibold text-text-primary mb-2 tracking-tight">开始构建你的对话树</h2>
             <p className="text-sm text-text-secondary leading-relaxed">
               提出一个问题，<span className="text-brand font-medium">选中回答中感兴趣的概念</span>，一键展开为新分支
             </p>

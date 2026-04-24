@@ -5,7 +5,7 @@ import { useAppStore, type AppView } from '../../store/appStore'
 interface NavItem { icon: ReactNode; label: string; view: AppView }
 
 const TOOLS: NavItem[] = [
-  { icon: <span className="material-symbols-outlined" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>account_tree</span>, label: '知识树', view: 'thinking-list' },
+  { icon: <span className="material-symbols-outlined" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1" }}>account_tree</span>, label: '对话树', view: 'thinking-list' },
   { icon: <Palette className="w-4 h-4" />, label: 'AI 原型', view: 'prototype-list' },
 ]
 
