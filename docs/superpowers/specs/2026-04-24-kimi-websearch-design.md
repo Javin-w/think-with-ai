@@ -258,7 +258,12 @@ return new Response(buildStream(async (send) => {
 
 ### 5.3 非 Moonshot provider 的兼容
 
-`useWebSearch = webSearch && provider === 'moonshot'`。如果用户切到 OpenAI/Anthropic，即使开关是 true 也不附 tools（`$web_search` 是 Moonshot 专属）。当前项目环境只配了 Moonshot，但保留这个判断让 provider 切换不崩。
+本次 `/api/chat` 的重写把唯一后端绑死到 Moonshot（`baseURL: https://api.moonshot.cn/v1`，`apiKey: MOONSHOT_API_KEY`），这跟现有实际运行环境一致——项目目前只配置了 Moonshot。当 `provider !== 'moonshot'` 时路由直接返回 `400 provider not supported`，以失败快速暴露替代"静默忽略"的行为。若将来要重新支持 OpenAI/Anthropic 等非 Moonshot provider，需要：
+
+1. 回归 Vercel AI SDK 作为并行路径，或
+2. 在 `streamChat` 里把 baseURL / apiKey 做成 provider-aware
+
+这是显式的 scope 收窄，不是 bug。
 
 ### 5.4 System Prompt 扩展（`apps/server/src/prompts.ts`）
 
