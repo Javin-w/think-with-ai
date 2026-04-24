@@ -40,6 +40,14 @@ export interface Annotation {
 }
 
 /**
+ * Per-message metadata (search state, future extensions)
+ */
+export interface ChatMessageMeta {
+  searchInProgress?: string       // query string while a $web_search round is in flight
+  searchQueries?: string[]        // all queries issued for this message (populated when done)
+}
+
+/**
  * Represents a single message in a conversation
  */
 export interface ChatMessage {
@@ -48,6 +56,7 @@ export interface ChatMessage {
   content: string;
   images?: string[];  // base64 data URLs for user-uploaded images
   createdAt: number;
+  meta?: ChatMessageMeta;
 }
 
 /**
@@ -109,6 +118,7 @@ export interface StreamRequest {
   provider?: string;    // 'openai' | 'anthropic'
   model?: string;
   mode?: ChatMode;
+  webSearch?: boolean;  // when true, attach $web_search tool (Moonshot only)
 }
 
 // ── Agent Types ──
