@@ -96,21 +96,64 @@ chat.post('/', async (c) => {
         }
       }
 
+      const tools = useWebSearch
+        ? [{ type: 'builtin_function' as const, function: { name: '$web_search' } }]
+        : undefined
+
+      const collectedQueries: string[] = []
+
       try {
-        for await (const ev of streamChat({
-          apiKey,
-          baseURL,
-          model: aiModel,
-          messages,
-          system: systemPrompt,
-          extraBody: { thinking: { type: 'disabled' } },
-          abortSignal: abortController.signal,
-        })) {
-          if (ev.type === 'text-delta') {
-            send('0', ev.text)
+        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+          if (abortController.signal.aborted) break
+
+          let roundToolCalls: import('../agent/core/llm').AccumulatedToolCall[] = []
+          let roundTextBuf = ''
+
+          for await (const ev of streamChat({
+            apiKey,
+            baseURL,
+            model: aiModel,
+            messages,
+            tools,
+            system: systemPrompt,
+            extraBody: { thinking: { type: 'disabled' } },
+            abortSignal: abortController.signal,
+          })) {
+            if (ev.type === 'text-delta') {
+              roundTextBuf += ev.text
+              send('0', ev.text)
+            } else if (ev.type === 'tool-calls-done') {
+              roundToolCalls = ev.calls
+              for (const call of ev.calls) {
+                const query = tryParseQuery(call.function.arguments)
+                collectedQueries.push(query)
+                send('2', [{ type: 'search-start', query }])
+              }
+            }
           }
-          // tool-calls not yet wired — Task 5 adds the loop
+
+          if (roundToolCalls.length === 0) break
+
+          // Feed back: assistant(with tool_calls) + one tool message per call.
+          // Moonshot reads the tool message's `content` (the arguments JSON) as
+          // the trigger signal to run the search server-side.
+          messages.push({
+            role: 'assistant',
+            content: roundTextBuf || null,
+            tool_calls: roundToolCalls,
+          })
+          for (const call of roundToolCalls) {
+            messages.push({
+              role: 'tool',
+              tool_call_id: call.id,
+              name: call.function.name,
+              content: call.function.arguments,
+            })
+          }
         }
+
+        // Tell the client to clear searchInProgress; keep the final query list
+        send('2', [{ type: 'search-done', queries: collectedQueries }])
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
           // user/client cancelled — silent stop, no error line
@@ -119,11 +162,7 @@ chat.post('/', async (c) => {
           send('3', msg)
         }
       } finally {
-        try {
-          controller.close()
-        } catch {
-          // already closed
-        }
+        try { controller.close() } catch { /* already closed */ }
       }
     },
     cancel() {
