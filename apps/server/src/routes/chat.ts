@@ -89,7 +89,11 @@ chat.post('/', async (c) => {
   const stream = new ReadableStream({
     async start(controller) {
       const send = (code: '0' | '2' | '3', payload: unknown) => {
-        controller.enqueue(encoder.encode(encodeLine(code, payload)))
+        try {
+          controller.enqueue(encoder.encode(encodeLine(code, payload)))
+        } catch {
+          // controller already closed (e.g. client disconnect) — drop the chunk
+        }
       }
 
       try {
@@ -108,10 +112,18 @@ chat.post('/', async (c) => {
           // tool-calls not yet wired — Task 5 adds the loop
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'AI provider error'
-        send('3', msg)
+        if (err instanceof Error && err.name === 'AbortError') {
+          // user/client cancelled — silent stop, no error line
+        } else {
+          const msg = err instanceof Error ? err.message : 'AI provider error'
+          send('3', msg)
+        }
       } finally {
-        controller.close()
+        try {
+          controller.close()
+        } catch {
+          // already closed
+        }
       }
     },
     cancel() {
