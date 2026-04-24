@@ -18,3 +18,11 @@ export const SYSTEM_PROMPTS: Record<ChatMode, string> = {
 - 不依赖外部框架（可使用 CDN 引入 Tailwind CSS）
 - 每次回复只输出代码块，不要包含额外解释`,
 }
+
+/**
+ * Appended to thinking-mode system prompt when web_search is enabled.
+ * Guides the model on when to search and how to cite sources.
+ */
+export const WEB_SEARCH_PROMPT_APPEND = `
+
+如果用户的问题涉及时效性信息、具体数据、最新事件、或你无法确定的事实，请调用 $web_search 工具搜索。搜索得到的网页请在回答中以 markdown 链接格式 [标题](URL) 标注来源。概念性、原理性、不随时间变化的问题不要搜索，直接回答即可。`
