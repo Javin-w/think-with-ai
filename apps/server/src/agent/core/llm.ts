@@ -28,14 +28,21 @@ export interface AssistantMessage {
   tool_calls?: AccumulatedToolCall[]
 }
 
-export interface OpenAIToolDefinition {
-  type: 'function'
-  function: {
-    name: string
-    description: string
-    parameters: Record<string, unknown>
-  }
-}
+export type OpenAIToolDefinition =
+  | {
+      type: 'function'
+      function: {
+        name: string
+        description: string
+        parameters: Record<string, unknown>
+      }
+    }
+  | {
+      type: 'builtin_function'
+      function: {
+        name: string
+      }
+    }
 
 export interface StreamChatOptions {
   apiKey: string
@@ -47,6 +54,7 @@ export interface StreamChatOptions {
   temperature?: number
   maxTokens?: number
   extraBody?: Record<string, unknown>
+  abortSignal?: AbortSignal
 }
 
 // ── Main function ──
@@ -54,7 +62,7 @@ export interface StreamChatOptions {
 export async function* streamChat(
   options: StreamChatOptions,
 ): AsyncGenerator<StreamEvent> {
-  const { apiKey, baseURL, model, messages, tools, system, temperature, maxTokens, extraBody } = options
+  const { apiKey, baseURL, model, messages, tools, system, temperature, maxTokens, extraBody, abortSignal } = options
 
   const body: Record<string, unknown> = {
     model,
@@ -79,6 +87,7 @@ export async function* streamChat(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: abortSignal,
   })
 
   if (!response.ok) {
