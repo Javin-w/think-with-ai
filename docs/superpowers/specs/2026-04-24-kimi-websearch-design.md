@@ -333,9 +333,11 @@ updateLastMessageMeta: async (nodeId: string, patch: Partial<ChatMessageMeta>) =
 }
 ```
 
-### 6.4 `components/KnowledgeTree/BranchConversationPanel.tsx` & `components/Chat/MessageInput.tsx`
+### 6.4 `components/Chat/MessageInput.tsx`
 
-输入框左下角加 🌐 按钮：
+**只改这一个输入组件**。`BranchConversationPanel.tsx` 不暴露自己的输入框——它调用 `<MessageInput />` 渲染两处（empty-state 和底部），所以改 `MessageInput` 一次两处就都生效。Homepage 用自己 inline 的 `<input>`，不走这里（符合"Homepage 不加图标"的要求）。
+
+在 `MessageInput` 的底部工具栏左侧按钮组（`<div className="flex items-center gap-0.5">`）里、`Plus` 图标按钮的**右边**加一个 🌐 按钮：
 
 ```tsx
 <button
@@ -356,23 +358,36 @@ updateLastMessageMeta: async (nodeId: string, patch: Partial<ChatMessageMeta>) =
 
 （`Globe` 从项目已在用的 `lucide-react` 导入；`clsx` 同样已是依赖）
 
-### 6.5 `components/Chat/MessageBubble.tsx`
+### 6.5 `components/KnowledgeTree/BranchConversationPanel.tsx::AssistantMessage`
 
-在 markdown content 上方插入状态条：
+**注意**：thinking 模式下 assistant 消息不用 `MessageBubble.tsx`，而是用该文件内定义的 `AssistantMessage` 组件（第 100 行起）。`MessageBubble` 是其他模式（prototype / chat preview 等）用的通用气泡，本次不动。
+
+在 `AssistantMessage` 里，`<article>` 元素**之前**插入状态条：
 
 ```tsx
-{message.meta?.searchInProgress && (
-  <div className="flex items-center gap-2 text-xs text-text-secondary mb-2">
-    <span className="animate-pulse">🔍</span>
-    <span>搜索：{message.meta.searchInProgress}</span>
+return (
+  <div className="mb-6">
+    {/* ↓ 新增：搜索状态条 */}
+    {message.meta?.searchInProgress && (
+      <div className="flex items-center gap-2 text-xs text-text-secondary mb-2">
+        <span className="animate-pulse">🔍</span>
+        <span>搜索：{message.meta.searchInProgress}</span>
+      </div>
+    )}
+    {!message.meta?.searchInProgress && (message.meta?.searchQueries?.length ?? 0) > 0 && (
+      <div className="text-xs text-text-secondary mb-2 opacity-70">
+        🔍 已搜索 {message.meta!.searchQueries!.length} 次：
+        {message.meta!.searchQueries!.join(' · ')}
+      </div>
+    )}
+
+    <article ...>
+      {/* 原有内容 */}
+    </article>
+
+    <BranchSummaryCard branches={branchNodes} />
   </div>
-)}
-{!message.meta?.searchInProgress && message.meta?.searchQueries?.length ? (
-  <div className="text-xs text-text-tertiary mb-2 opacity-70">
-    🔍 已搜索 {message.meta.searchQueries.length} 次：
-    {message.meta.searchQueries.join(' · ')}
-  </div>
-) : null}
+)
 ```
 
 ### 6.6 Homepage（`Homepage.tsx`）
@@ -385,7 +400,7 @@ updateLastMessageMeta: async (nodeId: string, patch: Partial<ChatMessageMeta>) =
 |------|------|
 | 循环超过 `MAX_TOOL_ROUNDS` | break，并在 messages 追加 system hint "搜索上限已达，请基于已有信息回答"，再发一次请求让模型收尾 |
 | `tool_calls.arguments` 不是合法 JSON | `tryParseQuery` 返回 `'…'`，流程不中断 |
-| `streamChat` 抛错（API 401/500/网络） | catch 后 send `3:"<message>"`，前端 useNodeStream 抛 Error，MessageBubble 末尾 `❌ Error: ...` |
+| `streamChat` 抛错（API 401/500/网络） | catch 后 send `3:"<message>"`，前端 useNodeStream 抛 Error，assistant 消息末尾 `❌ Error: ...`（沿用当前行为） |
 | 用户点停止 | `abortController.signal.aborted` 在每轮 loop 入口检查；`streamChat` 内部的 fetch 已经支持 AbortSignal（需在 chat.ts 里显式传入） |
 | 非 Moonshot provider 但 `webSearch=true` | 忽略开关，正常无 tool 调用；前端 UI 上开关仍保持用户意图（不强制关闭） |
 
