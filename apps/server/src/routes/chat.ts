@@ -64,7 +64,7 @@ chat.post('/', async (c) => {
   const { message, context = [], provider, model, mode, images, webSearch } = body
 
   const aiProvider = provider ?? process.env.AI_PROVIDER ?? 'moonshot'
-  const aiModel = model ?? process.env.AI_MODEL ?? 'kimi-k2-turbo-preview'
+  const envModel = model ?? process.env.AI_MODEL ?? 'kimi-k2-turbo-preview'
   const apiKey = process.env.MOONSHOT_API_KEY
   const baseURL = 'https://api.moonshot.cn/v1'
 
@@ -76,6 +76,13 @@ chat.post('/', async (c) => {
   }
 
   const useWebSearch = webSearch === true
+  // moonshot-v1-* (K1) only accepts the $web_search tool definition nominally —
+  // the search results don't reach the model, so answers fall back to training
+  // data. Force a K2 model whenever web_search is on; leave the user's AI_MODEL
+  // alone for other paths (prototype agent, news summarizer, etc.).
+  const aiModel = useWebSearch && !/^kimi-k2/.test(envModel)
+    ? 'kimi-k2.6'
+    : envModel
   const systemPrompt = useWebSearch
     ? SYSTEM_PROMPTS[mode ?? 'thinking'] + WEB_SEARCH_PROMPT_APPEND
     : SYSTEM_PROMPTS[mode ?? 'thinking']
