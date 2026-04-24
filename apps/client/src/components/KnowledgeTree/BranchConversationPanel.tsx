@@ -96,6 +96,21 @@ function highlightAnnotations(text: string, annotations: Annotation[], onHighlig
   return <>{parts}</>
 }
 
+/**
+ * Normalize a $web_search query string for display.
+ * Moonshot's builtin $web_search rewrites tool_call arguments to server-side
+ * metadata like `{"search_result":{"search_id":"..."}}` after executing the
+ * search, so we can't always recover the original query word. Detect obvious
+ * JSON / overlong strings and fall back to a generic label.
+ */
+function formatSearchQuery(raw: string): string {
+  if (!raw) return '联网搜索'
+  const trimmed = raw.trim()
+  // Metadata JSON starts with `{` or is too long to be a readable query
+  if (trimmed.startsWith('{') || trimmed.length > 40) return '联网搜索'
+  return trimmed
+}
+
 /** Render an AI message with per-paragraph branch triggers and annotation highlights */
 function AssistantMessage({ message, onBranch, isStreaming, childBranches, annotations, renderedBranchIds, onHighlightClick, activeAnnotationId }: {
   message: ChatMessage
@@ -132,6 +147,19 @@ function AssistantMessage({ message, onBranch, isStreaming, childBranches, annot
 
   return (
     <div className="mb-6">
+      {message.meta?.searchInProgress && isStreaming && (
+        <div className="flex items-center gap-2 text-xs text-text-secondary mb-2">
+          <span className="animate-pulse">🔍</span>
+          <span>搜索：{formatSearchQuery(message.meta.searchInProgress)}</span>
+        </div>
+      )}
+      {!(message.meta?.searchInProgress && isStreaming) && (message.meta?.searchQueries?.length ?? 0) > 0 && (
+        <div className="text-xs text-text-secondary/70 mb-2">
+          🔍 已搜索 {message.meta!.searchQueries!.length} 次：
+          <span className="opacity-80"> {message.meta!.searchQueries!.map(formatSearchQuery).join(' · ')}</span>
+        </div>
+      )}
+
       <article
         data-testid="assistant-message"
         data-message-id={message.id}
