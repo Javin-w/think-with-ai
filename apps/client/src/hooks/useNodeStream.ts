@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { useTreeStore } from '../store/treeStore'
+import { useChatSettingsStore } from '../store/chatSettingsStore'
 import { getContextMessages } from '../store/treeUtils'
 
 export function useNodeStream() {
@@ -7,7 +8,7 @@ export function useNodeStream() {
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  const { addMessage, updateLastMessage, updateTreeTitle } = useTreeStore()
+  const { addMessage, updateLastMessage, updateLastMessageMeta, updateTreeTitle } = useTreeStore()
 
   const sendMessage = useCallback(async (nodeId: string, userMessage: string, images?: string[]) => {
     setIsStreaming(true)
@@ -45,10 +46,11 @@ export function useNodeStream() {
     abortControllerRef.current = new AbortController()
 
     try {
+      const webSearch = useChatSettingsStore.getState().webSearchEnabled
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, context, images }),
+        body: JSON.stringify({ message, context, images, webSearch }),
         signal: abortControllerRef.current.signal,
       })
 
@@ -81,6 +83,27 @@ export function useNodeStream() {
           if (line.startsWith('3:')) {
             const errorMsg = JSON.parse(line.slice(2))
             throw new Error(typeof errorMsg === 'string' ? errorMsg : 'AI provider error')
+          }
+          // Custom data events (prefix '2:') — search state updates
+          if (line.startsWith('2:')) {
+            try {
+              const events = JSON.parse(line.slice(2))
+              if (Array.isArray(events)) {
+                for (const e of events) {
+                  if (e?.type === 'search-start' && typeof e.query === 'string') {
+                    await updateLastMessageMeta(nodeId, { searchInProgress: e.query })
+                  } else if (e?.type === 'search-done' && Array.isArray(e.queries)) {
+                    await updateLastMessageMeta(nodeId, {
+                      searchInProgress: undefined,
+                      searchQueries: e.queries.length > 0 ? e.queries : undefined,
+                    })
+                  }
+                }
+              }
+            } catch {
+              // malformed data line — ignore
+            }
+            continue
           }
           if (!line.startsWith('0:')) continue  // Only text delta events
           try {
@@ -127,7 +150,7 @@ export function useNodeStream() {
       setIsStreaming(false)
       abortControllerRef.current = null
     }
-  }, [addMessage, updateLastMessage, updateTreeTitle])
+  }, [addMessage, updateLastMessage, updateLastMessageMeta, updateTreeTitle])
 
   const abort = useCallback(() => {
     abortControllerRef.current?.abort()
