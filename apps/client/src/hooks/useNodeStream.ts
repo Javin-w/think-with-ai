@@ -66,6 +66,11 @@ export function useNodeStream() {
       const decoder = new TextDecoder()
       let accumulated = ''
       let lineBuffer = ''
+      // Moonshot's $web_search has no explicit "search finished" boundary —
+      // the answer just starts streaming after server-side search completes.
+      // Use the first text delta after a search-start as the implicit signal
+      // to clear the "searching…" bar so it doesn't overlap with the answer.
+      let searchBarActive = false
 
       while (true) {
         const { done, value } = await reader.read()
@@ -91,8 +96,10 @@ export function useNodeStream() {
               if (Array.isArray(events)) {
                 for (const e of events) {
                   if (e?.type === 'search-start' && typeof e.query === 'string') {
+                    searchBarActive = true
                     await updateLastMessageMeta(nodeId, { searchInProgress: e.query })
                   } else if (e?.type === 'search-done' && Array.isArray(e.queries)) {
+                    searchBarActive = false
                     await updateLastMessageMeta(nodeId, {
                       searchInProgress: undefined,
                       searchQueries: e.queries.length > 0 ? e.queries : undefined,
@@ -110,6 +117,12 @@ export function useNodeStream() {
             const jsonStr = line.slice(2)  // Remove "0:" prefix
             const text = JSON.parse(jsonStr)
             if (typeof text === 'string') {
+              // First text delta after a search-start means the answer is
+              // streaming in — clear the "searching…" bar immediately.
+              if (searchBarActive) {
+                searchBarActive = false
+                await updateLastMessageMeta(nodeId, { searchInProgress: undefined })
+              }
               accumulated += text
               await updateLastMessage(nodeId, accumulated)
             }
