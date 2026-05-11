@@ -28,10 +28,10 @@ function extractContent(html: string): string {
     .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
 }
 
-/** Fetch AI daily from ai.hubtoday.app */
+/** Fetch AI daily from hex2077.dev (migrated from ai.hubtoday.app) */
 async function fetchHubToday(date: string): Promise<string> {
   const [year, month] = date.split('-')
-  const url = `https://ai.hubtoday.app/${year}-${month}/${date}/`
+  const url = `https://hex2077.dev/docs/${year}-${month}/${date}/`
   console.log(`[scraper] Fetching hubtoday: ${url}`)
 
   try {
@@ -42,6 +42,13 @@ async function fetchHubToday(date: string): Promise<string> {
     }
     const html = await res.text()
     let md = nhm.translate(extractContent(html)).trim()
+    // hex2077 wraps articles with a decorative header (nav, search box, "Secure_Doc"
+    // banner, promo blockquote, promo link). Anchor on the first 今日摘要 heading
+    // and drop everything before it. Falls back to original content if not found.
+    const summaryIdx = md.search(/^#{1,3}\s+\*{0,2}\s*今日摘要/m)
+    if (summaryIdx > 0) {
+      md = md.slice(summaryIdx)
+    }
     // Strip duplicate title and tag blockquote
     md = md
       .replace(/^#\s*AI资讯日报[^\n]*\n*/i, '')
