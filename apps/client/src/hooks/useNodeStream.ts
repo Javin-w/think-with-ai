@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
 import { useTreeStore } from '../store/treeStore'
-import { useChatSettingsStore } from '../store/chatSettingsStore'
 import { getContextMessages } from '../store/treeUtils'
 
 export function useNodeStream() {
@@ -8,7 +7,7 @@ export function useNodeStream() {
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  const { addMessage, updateLastMessage, updateLastMessageMeta, updateTreeTitle } = useTreeStore()
+  const { addMessage, updateLastMessage, updateTreeTitle } = useTreeStore()
 
   const sendMessage = useCallback(async (nodeId: string, userMessage: string, images?: string[]) => {
     setIsStreaming(true)
@@ -46,11 +45,10 @@ export function useNodeStream() {
     abortControllerRef.current = new AbortController()
 
     try {
-      const webSearch = useChatSettingsStore.getState().webSearchEnabled
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, context, images, webSearch }),
+        body: JSON.stringify({ message, context, images }),
         signal: abortControllerRef.current.signal,
       })
 
@@ -66,11 +64,6 @@ export function useNodeStream() {
       const decoder = new TextDecoder()
       let accumulated = ''
       let lineBuffer = ''
-      // Moonshot's $web_search has no explicit "search finished" boundary —
-      // the answer just starts streaming after server-side search completes.
-      // Use the first text delta after a search-start as the implicit signal
-      // to clear the "searching…" bar so it doesn't overlap with the answer.
-      let searchBarActive = false
 
       while (true) {
         const { done, value } = await reader.read()
@@ -89,40 +82,11 @@ export function useNodeStream() {
             const errorMsg = JSON.parse(line.slice(2))
             throw new Error(typeof errorMsg === 'string' ? errorMsg : 'AI provider error')
           }
-          // Custom data events (prefix '2:') — search state updates
-          if (line.startsWith('2:')) {
-            try {
-              const events = JSON.parse(line.slice(2))
-              if (Array.isArray(events)) {
-                for (const e of events) {
-                  if (e?.type === 'search-start' && typeof e.query === 'string') {
-                    searchBarActive = true
-                    await updateLastMessageMeta(nodeId, { searchInProgress: e.query })
-                  } else if (e?.type === 'search-done' && Array.isArray(e.queries)) {
-                    searchBarActive = false
-                    await updateLastMessageMeta(nodeId, {
-                      searchInProgress: undefined,
-                      searchQueries: e.queries.length > 0 ? e.queries : undefined,
-                    })
-                  }
-                }
-              }
-            } catch {
-              // malformed data line — ignore
-            }
-            continue
-          }
           if (!line.startsWith('0:')) continue  // Only text delta events
           try {
             const jsonStr = line.slice(2)  // Remove "0:" prefix
             const text = JSON.parse(jsonStr)
             if (typeof text === 'string') {
-              // First text delta after a search-start means the answer is
-              // streaming in — clear the "searching…" bar immediately.
-              if (searchBarActive) {
-                searchBarActive = false
-                await updateLastMessageMeta(nodeId, { searchInProgress: undefined })
-              }
               accumulated += text
               await updateLastMessage(nodeId, accumulated)
             }
@@ -163,7 +127,7 @@ export function useNodeStream() {
       setIsStreaming(false)
       abortControllerRef.current = null
     }
-  }, [addMessage, updateLastMessage, updateLastMessageMeta, updateTreeTitle])
+  }, [addMessage, updateLastMessage, updateTreeTitle])
 
   const abort = useCallback(() => {
     abortControllerRef.current?.abort()

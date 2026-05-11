@@ -28,21 +28,14 @@ export interface AssistantMessage {
   tool_calls?: AccumulatedToolCall[]
 }
 
-export type OpenAIToolDefinition =
-  | {
-      type: 'function'
-      function: {
-        name: string
-        description: string
-        parameters: Record<string, unknown>
-      }
-    }
-  | {
-      type: 'builtin_function'
-      function: {
-        name: string
-      }
-    }
+export interface OpenAIToolDefinition {
+  type: 'function'
+  function: {
+    name: string
+    description: string
+    parameters: Record<string, unknown>
+  }
+}
 
 export interface StreamChatOptions {
   apiKey: string

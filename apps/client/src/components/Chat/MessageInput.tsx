@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { Plus, ArrowRight, X, Globe } from 'lucide-react'
-import { useChatSettingsStore } from '../../store/chatSettingsStore'
+import { Plus, ArrowRight, X } from 'lucide-react'
 
 interface MessageInputProps {
   onSend: (message: string, images?: string[]) => void
@@ -22,9 +21,6 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
   const [images, setImages] = useState<string[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const webSearchEnabled = useChatSettingsStore(s => s.webSearchEnabled)
-  const toggleWebSearch = useChatSettingsStore(s => s.toggleWebSearch)
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -127,19 +123,6 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
               title="上传图片"
             >
               <Plus size={18} strokeWidth={1.5} />
-            </button>
-            <button
-              type="button"
-              onClick={toggleWebSearch}
-              className={`flex items-center gap-1 h-8 px-2 rounded-full text-xs transition-colors ${
-                webSearchEnabled
-                  ? 'bg-brand/15 text-brand border border-brand/30'
-                  : 'text-text-secondary/50 hover:text-text-secondary/80 border border-transparent'
-              }`}
-              title={webSearchEnabled ? '已开启联网搜索（点击关闭）' : '已关闭联网搜索（点击开启）'}
-            >
-              <Globe size={14} strokeWidth={1.8} />
-              <span>联网</span>
             </button>
           </div>
           <button

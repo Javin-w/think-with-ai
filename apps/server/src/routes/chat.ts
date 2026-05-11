@@ -1,28 +1,13 @@
 import { Hono } from 'hono'
 import type { StreamRequest, ChatMessage } from '@repo/types'
-import { SYSTEM_PROMPTS, WEB_SEARCH_PROMPT_APPEND } from '../prompts'
+import { SYSTEM_PROMPTS } from '../prompts'
 import { streamChat } from '../agent/core/llm'
 
 const chat = new Hono()
 
-const MAX_TOOL_ROUNDS = 5
-
 // Encode one line in Vercel AI data-stream protocol: "<code>:<json>\n"
-function encodeLine(code: '0' | '2' | '3', payload: unknown): string {
+function encodeLine(code: '0' | '3', payload: unknown): string {
   return `${code}:${JSON.stringify(payload)}\n`
-}
-
-// Try to read a human-readable query from a $web_search arguments JSON string
-function tryParseQuery(argsJson: string): string {
-  try {
-    const parsed = JSON.parse(argsJson)
-    if (typeof parsed?.query === 'string' && parsed.query) return parsed.query
-    if (typeof parsed?.q === 'string' && parsed.q) return parsed.q
-    // Fallback: stringify the object so user sees *something*
-    return JSON.stringify(parsed).slice(0, 80)
-  } catch {
-    return '…'
-  }
 }
 
 // Build OpenAI-format messages from the request (preserves images, etc.)
@@ -61,10 +46,10 @@ function buildMessages(
 
 chat.post('/', async (c) => {
   const body = await c.req.json<StreamRequest & { images?: string[] }>()
-  const { message, context = [], provider, model, mode, images, webSearch } = body
+  const { message, context = [], provider, model, mode, images } = body
 
   const aiProvider = provider ?? process.env.AI_PROVIDER ?? 'moonshot'
-  const envModel = model ?? process.env.AI_MODEL ?? 'kimi-k2-turbo-preview'
+  const aiModel = model ?? process.env.AI_MODEL ?? 'kimi-k2-turbo-preview'
   const apiKey = process.env.MOONSHOT_API_KEY
   const baseURL = 'https://api.moonshot.cn/v1'
 
@@ -75,18 +60,7 @@ chat.post('/', async (c) => {
     return c.json({ error: 'MOONSHOT_API_KEY is not set' }, 500)
   }
 
-  const useWebSearch = webSearch === true
-  // moonshot-v1-* (K1) only accepts the $web_search tool definition nominally —
-  // the search results don't reach the model, so answers fall back to training
-  // data. Force a K2 model whenever web_search is on; leave the user's AI_MODEL
-  // alone for other paths (prototype agent, news summarizer, etc.).
-  const aiModel = useWebSearch && !/^kimi-k2/.test(envModel)
-    ? 'kimi-k2.6'
-    : envModel
-  const systemPrompt = useWebSearch
-    ? SYSTEM_PROMPTS[mode ?? 'thinking'] + WEB_SEARCH_PROMPT_APPEND
-    : SYSTEM_PROMPTS[mode ?? 'thinking']
-
+  const systemPrompt = SYSTEM_PROMPTS[mode ?? 'thinking']
   const messages = buildMessages(context, message, images)
 
   const abortController = new AbortController()
@@ -95,7 +69,7 @@ chat.post('/', async (c) => {
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (code: '0' | '2' | '3', payload: unknown) => {
+      const send = (code: '0' | '3', payload: unknown) => {
         try {
           controller.enqueue(encoder.encode(encodeLine(code, payload)))
         } catch {
@@ -103,64 +77,20 @@ chat.post('/', async (c) => {
         }
       }
 
-      const tools = useWebSearch
-        ? [{ type: 'builtin_function' as const, function: { name: '$web_search' } }]
-        : undefined
-
-      const collectedQueries: string[] = []
-
       try {
-        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-          if (abortController.signal.aborted) break
-
-          let roundToolCalls: import('../agent/core/llm').AccumulatedToolCall[] = []
-          let roundTextBuf = ''
-
-          for await (const ev of streamChat({
-            apiKey,
-            baseURL,
-            model: aiModel,
-            messages,
-            tools,
-            system: systemPrompt,
-            extraBody: { thinking: { type: 'disabled' } },
-            abortSignal: abortController.signal,
-          })) {
-            if (ev.type === 'text-delta') {
-              roundTextBuf += ev.text
-              send('0', ev.text)
-            } else if (ev.type === 'tool-calls-done') {
-              roundToolCalls = ev.calls
-              for (const call of ev.calls) {
-                const query = tryParseQuery(call.function.arguments)
-                collectedQueries.push(query)
-                send('2', [{ type: 'search-start', query }])
-              }
-            }
-          }
-
-          if (roundToolCalls.length === 0) break
-
-          // Feed back: assistant(with tool_calls) + one tool message per call.
-          // Moonshot reads the tool message's `content` (the arguments JSON) as
-          // the trigger signal to run the search server-side.
-          messages.push({
-            role: 'assistant',
-            content: roundTextBuf || null,
-            tool_calls: roundToolCalls,
-          })
-          for (const call of roundToolCalls) {
-            messages.push({
-              role: 'tool',
-              tool_call_id: call.id,
-              name: call.function.name,
-              content: call.function.arguments,
-            })
+        for await (const ev of streamChat({
+          apiKey,
+          baseURL,
+          model: aiModel,
+          messages,
+          system: systemPrompt,
+          extraBody: { thinking: { type: 'disabled' } },
+          abortSignal: abortController.signal,
+        })) {
+          if (ev.type === 'text-delta') {
+            send('0', ev.text)
           }
         }
-
-        // Tell the client to clear searchInProgress; keep the final query list
-        send('2', [{ type: 'search-done', queries: collectedQueries }])
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
           // user/client cancelled — silent stop, no error line
