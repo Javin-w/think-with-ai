@@ -1,11 +1,13 @@
 import { useState, useRef, useCallback } from 'react'
-import { Plus, ArrowRight, X, Globe } from 'lucide-react'
+import { Plus, ArrowRight, X, Globe, GitBranch } from 'lucide-react'
 import { useChatSettingsStore } from '../../store/chatSettingsStore'
 
 interface MessageInputProps {
-  onSend: (message: string, images?: string[]) => void
+  onSend: (message: string, images?: string[], newBranch?: boolean) => void
   disabled?: boolean
   placeholder?: string
+  /** Show the "new branch" toggle. Only enable in tree-conversation contexts. */
+  allowBranch?: boolean
 }
 
 function fileToBase64(file: File): Promise<string> {
@@ -17,9 +19,12 @@ function fileToBase64(file: File): Promise<string> {
   })
 }
 
-export default function MessageInput({ onSend, disabled = false, placeholder = '回复...' }: MessageInputProps) {
+export default function MessageInput({ onSend, disabled = false, placeholder = '回复...', allowBranch = false }: MessageInputProps) {
   const [value, setValue] = useState('')
   const [images, setImages] = useState<string[]>([])
+  // One-shot toggle — auto-reset after send. Local state (not persisted)
+  // so navigating away or reloading clears the "branch mode" intent.
+  const [branchMode, setBranchMode] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -36,9 +41,10 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
   const handleSend = () => {
     const trimmed = value.trim()
     if ((!trimmed && images.length === 0) || disabled) return
-    onSend(trimmed, images.length > 0 ? images : undefined)
+    onSend(trimmed, images.length > 0 ? images : undefined, branchMode)
     setValue('')
     setImages([])
+    setBranchMode(false)
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto'
     }
@@ -112,7 +118,7 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           disabled={disabled}
-          placeholder={placeholder}
+          placeholder={branchMode ? `↳ 新分支：${placeholder}` : placeholder}
           rows={1}
           className="w-full resize-none px-4 pt-3 pb-1 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed bg-transparent"
           style={{ minHeight: '36px', maxHeight: '200px' }}
@@ -141,6 +147,21 @@ export default function MessageInput({ onSend, disabled = false, placeholder = '
               <Globe size={14} strokeWidth={1.8} />
               <span>联网</span>
             </button>
+            {allowBranch && (
+              <button
+                type="button"
+                onClick={() => setBranchMode(v => !v)}
+                className={`flex items-center gap-1 h-8 px-2 rounded-full text-xs transition-colors ${
+                  branchMode
+                    ? 'bg-brand/15 text-brand border border-brand/30'
+                    : 'text-text-secondary/50 hover:text-text-secondary/80 border border-transparent'
+                }`}
+                title={branchMode ? '发送后将开启新分支（点击取消）' : '点击开启新分支模式：本次发送将创建子分支节点'}
+              >
+                <GitBranch size={14} strokeWidth={1.8} />
+                <span>新分支</span>
+              </button>
+            )}
           </div>
           <button
             onClick={handleSend}

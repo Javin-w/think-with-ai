@@ -147,13 +147,23 @@ function App() {
     inputAutoFocusRef.current = true
   }
 
-  const handleSend = async (message: string, images?: string[]) => {
+  const handleSend = async (message: string, images?: string[], newBranch?: boolean) => {
     if (!currentNodeId) {
       const { rootNode } = await createTree(message)
       await sendMessage(rootNode.id, message, images)
-    } else {
-      await sendMessage(currentNodeId, message, images)
+      return
     }
+    // newBranch toggle (manual branch): spawn a child node with selectedText=null
+    // and send the user's message into it. Ancestor context is auto-included
+    // by getContextMessages, so the child inherits the parent thread naturally.
+    if (newBranch) {
+      dismissBranchTip()
+      const child = await createNode(currentNodeId, null)
+      triggerFirstBranchCelebration()
+      await sendMessage(child.id, message, images)
+      return
+    }
+    await sendMessage(currentNodeId, message, images)
   }
 
   const handleBranch = async (selectedText: string) => {

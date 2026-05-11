@@ -417,7 +417,7 @@ export default function BranchConversationPanel({
 
       {/* Input */}
       <div className="max-w-2xl mx-auto w-full">
-        <MessageInput onSend={onSend} disabled={isStreaming} placeholder="继续对话..." />
+        <MessageInput onSend={onSend} disabled={isStreaming} placeholder="继续对话..." allowBranch />
       </div>
     </div>
   )
