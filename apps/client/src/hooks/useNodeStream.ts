@@ -4,7 +4,9 @@ import { useChatSettingsStore } from '../store/chatSettingsStore'
 import { getContextMessages } from '../store/treeUtils'
 
 export function useNodeStream() {
-  const [isStreaming, setIsStreaming] = useState(false)
+  // Track which node is currently streaming, not just a boolean — otherwise the
+  // streaming indicator leaks across nodes when the user switches branches mid-stream.
+  const [streamingNodeId, setStreamingNodeId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -17,7 +19,7 @@ export function useNodeStream() {
   } = useTreeStore()
 
   const sendMessage = useCallback(async (nodeId: string, userMessage: string, images?: string[]) => {
-    setIsStreaming(true)
+    setStreamingNodeId(nodeId)
     setError(null)
 
     const userMsg = {
@@ -144,7 +146,7 @@ export function useNodeStream() {
       setError(errorMsg)
       await updateLastMessage(nodeId, `❌ Error: ${errorMsg}`)
     } finally {
-      setIsStreaming(false)
+      setStreamingNodeId(null)
       abortControllerRef.current = null
     }
   }, [addMessage, updateLastMessage, updateLastMessageMeta, appendLastMessageCitations, updateTreeTitle])
@@ -153,5 +155,5 @@ export function useNodeStream() {
     abortControllerRef.current?.abort()
   }, [])
 
-  return { sendMessage, isStreaming, error, abort }
+  return { sendMessage, streamingNodeId, error, abort }
 }

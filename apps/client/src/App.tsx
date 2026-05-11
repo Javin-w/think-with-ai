@@ -38,7 +38,11 @@ function App() {
     setCurrentNode,
   } = useTreeStore()
   const { currentView, navigateTo } = useAppStore()
-  const { sendMessage, isStreaming } = useNodeStream()
+  const { sendMessage, streamingNodeId } = useNodeStream()
+  // Derived: is *the currently selected* node mid-stream? Avoids leaking the
+  // "thinking..." indicator and input-disabled state across branches when the
+  // user switches nodes while another is still streaming.
+  const isCurrentNodeStreaming = streamingNodeId !== null && streamingNodeId === currentNodeId
   const inputAutoFocusRef = useRef(false)
   const {
     showBranchTip,
@@ -67,18 +71,20 @@ function App() {
     }
   }, [currentView, loadTrees])
 
-  // Trigger branch tip after first AI reply on root node
-  const prevStreamingRef = useRef(false)
+  // Trigger branch tip after first AI reply on root node — only when the
+  // stream that just ended belonged to the currently selected node.
+  const prevStreamingNodeIdRef = useRef<string | null>(null)
   useEffect(() => {
-    if (prevStreamingRef.current && !isStreaming && currentNodeId) {
+    const prev = prevStreamingNodeIdRef.current
+    if (prev && !streamingNodeId && prev === currentNodeId) {
       const state = useTreeStore.getState()
       const node = state.nodes.find(n => n.id === currentNodeId)
       if (node && node.parentId === null && node.messages.length === 2) {
         triggerBranchTip()
       }
     }
-    prevStreamingRef.current = isStreaming
-  }, [isStreaming, currentNodeId, triggerBranchTip])
+    prevStreamingNodeIdRef.current = streamingNodeId
+  }, [streamingNodeId, currentNodeId, triggerBranchTip])
 
   // Clear pending annotation when node changes
   useEffect(() => {
@@ -151,7 +157,7 @@ function App() {
   }
 
   const handleBranch = async (selectedText: string) => {
-    if (!currentNodeId || isStreaming) return
+    if (!currentNodeId || isCurrentNodeStreaming) return
     dismissBranchTip()
     const newNode = await createNode(currentNodeId, selectedText)
     triggerFirstBranchCelebration()
@@ -228,7 +234,7 @@ function App() {
                 onAnnotate={handleAnnotate}
                 onHighlightClick={handleHighlightClick}
                 activeAnnotationId={activeAnnotationId}
-                isStreaming={isStreaming}
+                isStreaming={isCurrentNodeStreaming}
               />
               {mapFloatOpen && <TreeMapFloat treeId={currentTreeId} onClose={toggleMapFloat} />}
               <AnnotationsPanel
