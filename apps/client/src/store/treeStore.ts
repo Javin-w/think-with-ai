@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Tree, TreeNode, ChatMessage, Annotation } from '@repo/types'
+import type { Tree, TreeNode, ChatMessage, Annotation, ChatMessageMeta, SearchCitation } from '@repo/types'
 import { db } from '../db/index'
 
 interface TreeStore {
@@ -17,6 +17,8 @@ interface TreeStore {
   createNode: (parentId: string, selectedText: string | null) => Promise<TreeNode>
   addMessage: (nodeId: string, message: ChatMessage) => Promise<void>
   updateLastMessage: (nodeId: string, content: string) => Promise<void>
+  updateLastMessageMeta: (nodeId: string, patch: Partial<ChatMessageMeta>) => Promise<void>
+  appendLastMessageCitations: (nodeId: string, more: SearchCitation[]) => Promise<void>
   updateTreeTitle: (treeId: string, title: string) => Promise<void>
   setCurrentTree: (treeId: string | null) => void
   setCurrentNode: (nodeId: string | null) => void
@@ -123,6 +125,52 @@ export const useTreeStore = create<TreeStore>((set, get) => ({
     if (!node || node.messages.length === 0) return
     const updatedMessages = node.messages.map((m, i) =>
       i === node.messages.length - 1 ? { ...m, content } : m
+    )
+    await db.nodes.update(nodeId, { messages: updatedMessages })
+    set(state => ({
+      nodes: state.nodes.map(n =>
+        n.id === nodeId ? { ...n, messages: updatedMessages } : n
+      ),
+    }))
+  },
+
+  updateLastMessageMeta: async (nodeId: string, patch: Partial<ChatMessageMeta>) => {
+    const { nodes } = get()
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node || node.messages.length === 0) return
+    const lastIdx = node.messages.length - 1
+    const existingMeta = node.messages[lastIdx].meta ?? {}
+    const mergedMeta: ChatMessageMeta = { ...existingMeta, ...patch }
+    // Drop explicit undefined so Dexie stores a clean object
+    if (mergedMeta.searchInProgress === undefined) delete mergedMeta.searchInProgress
+    if (mergedMeta.searchQueries === undefined) delete mergedMeta.searchQueries
+    if (mergedMeta.citations === undefined) delete mergedMeta.citations
+
+    const updatedMessages = node.messages.map((m, i) =>
+      i === lastIdx ? { ...m, meta: mergedMeta } : m
+    )
+    await db.nodes.update(nodeId, { messages: updatedMessages })
+    set(state => ({
+      nodes: state.nodes.map(n =>
+        n.id === nodeId ? { ...n, messages: updatedMessages } : n
+      ),
+    }))
+  },
+
+  appendLastMessageCitations: async (nodeId: string, more: SearchCitation[]) => {
+    const { nodes } = get()
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node || node.messages.length === 0 || more.length === 0) return
+    const lastIdx = node.messages.length - 1
+    const existingMeta = node.messages[lastIdx].meta ?? {}
+    const existingCitations = existingMeta.citations ?? []
+    // De-dupe by `n` (citation number)
+    const known = new Set(existingCitations.map(c => c.n))
+    const merged = [...existingCitations, ...more.filter(c => !known.has(c.n))]
+
+    const mergedMeta: ChatMessageMeta = { ...existingMeta, citations: merged }
+    const updatedMessages = node.messages.map((m, i) =>
+      i === lastIdx ? { ...m, meta: mergedMeta } : m
     )
     await db.nodes.update(nodeId, { messages: updatedMessages })
     set(state => ({

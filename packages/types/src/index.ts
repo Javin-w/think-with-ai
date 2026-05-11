@@ -40,6 +40,33 @@ export interface Annotation {
 }
 
 /**
+ * One web search result returned to the client (citation card data).
+ * The `n` field is the 1-based index used in answer text as `[N]`.
+ */
+export interface SearchCitation {
+  n: number;
+  title: string;
+  url: string;
+  snippet: string;       // short excerpt
+  summary?: string;      // longer excerpt when available
+  siteName: string;
+  favicon: string;       // siteIcon URL
+  datePublished?: string;  // ISO timestamp if available
+}
+
+/**
+ * Per-message metadata, persisted alongside the assistant message.
+ */
+export interface ChatMessageMeta {
+  /** Query string while a web_search round is in flight (UI shows "searching…") */
+  searchInProgress?: string;
+  /** All queries issued for this message (populated as searches complete) */
+  searchQueries?: string[];
+  /** Citations attached to the answer; ordered by `n`. */
+  citations?: SearchCitation[];
+}
+
+/**
  * Represents a single message in a conversation
  */
 export interface ChatMessage {
@@ -48,6 +75,7 @@ export interface ChatMessage {
   content: string;
   images?: string[];  // base64 data URLs for user-uploaded images
   createdAt: number;
+  meta?: ChatMessageMeta;
 }
 
 /**
@@ -109,6 +137,7 @@ export interface StreamRequest {
   provider?: string;    // 'openai' | 'anthropic'
   model?: string;
   mode?: ChatMode;
+  webSearch?: boolean;  // when true, enable Agentic web search via Bocha
 }
 
 // ── Agent Types ──

@@ -13,6 +13,7 @@ import Breadcrumb from './Breadcrumb'
 import ParentQuoteCard from './ParentQuoteCard'
 import BranchTrigger from './BranchTrigger'
 import BranchSummaryCard from './BranchSummaryCard'
+import { CitationList, injectCitationMarkers } from '../Chat/CitationList'
 import { preprocessLatex } from '../../utils/preprocessLatex'
 
 interface BranchConversationPanelProps {
@@ -130,8 +131,25 @@ function AssistantMessage({ message, onBranch, isStreaming, childBranches, annot
     return annotations.filter(a => a.messageId === message.id)
   }, [annotations, message.id])
 
+  const citations = message.meta?.citations ?? []
+  const searchInProgress = message.meta?.searchInProgress
+  const searchQueries = message.meta?.searchQueries ?? []
+
   return (
     <div className="mb-6">
+      {searchInProgress && isStreaming && (
+        <div className="flex items-center gap-2 text-xs text-text-secondary mb-3">
+          <span className="animate-pulse">🔍</span>
+          <span>正在搜索：<span className="text-text-primary">{searchInProgress}</span></span>
+        </div>
+      )}
+      {!(searchInProgress && isStreaming) && searchQueries.length > 0 && (
+        <div className="text-xs text-text-secondary/70 mb-3">
+          🔍 已搜索 {searchQueries.length} 次：
+          <span className="opacity-80"> {searchQueries.join(' · ')}</span>
+        </div>
+      )}
+
       <article
         data-testid="assistant-message"
         data-message-id={message.id}
@@ -149,14 +167,18 @@ function AssistantMessage({ message, onBranch, isStreaming, childBranches, annot
                   ? children.map((c: any) => typeof c === 'string' ? c : c?.props?.children || '').join('')
                   : ''
 
-              // Apply annotation highlighting to text children
-              const highlightedChildren = messageAnnotations.length > 0 && typeof children === 'string'
+              // Apply annotation highlighting first (operates on raw strings),
+              // then citation [N] markers (walks the resulting React tree).
+              const annotated = messageAnnotations.length > 0 && typeof children === 'string'
                 ? highlightAnnotations(children, messageAnnotations, onHighlightClick, activeAnnotationId)
                 : children
+              const finalChildren = citations.length > 0
+                ? injectCitationMarkers(annotated, citations, message.id)
+                : annotated
 
               return (
                 <div className="relative group">
-                  <p {...props}>{highlightedChildren}</p>
+                  <p {...props}>{finalChildren}</p>
                   {!isStreaming && textContent.length > 20 && (
                     <BranchTrigger
                       paragraphText={textContent.slice(0, 200)}
@@ -166,11 +188,19 @@ function AssistantMessage({ message, onBranch, isStreaming, childBranches, annot
                 </div>
               )
             },
+            li({ children, ...props }: any) {
+              const finalChildren = citations.length > 0
+                ? injectCitationMarkers(children, citations, message.id)
+                : children
+              return <li {...props}>{finalChildren}</li>
+            },
           }}
         >
           {preprocessLatex(message.content)}
         </ReactMarkdown>
       </article>
+
+      <CitationList messageId={message.id} citations={citations} />
 
       <BranchSummaryCard branches={branchNodes} />
     </div>
